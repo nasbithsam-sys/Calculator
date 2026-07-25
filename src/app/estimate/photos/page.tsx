@@ -12,7 +12,7 @@ import PhotoAnnotator, { AnnotationLine } from '@/components/PhotoAnnotator';
 
 export default function PhotosPage() {
   const router = useRouter();
-  const { setMethod, setStatus, quote, addPhoto, removePhoto, updatePhoto } = useQuoteStore();
+  const { setMethod, setStatus, quote, addPhoto, removePhoto, updatePhoto, setFeet } = useQuoteStore();
   const [isClient, setIsClient] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

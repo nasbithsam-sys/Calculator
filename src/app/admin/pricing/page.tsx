@@ -76,7 +76,10 @@ export default async function PricingConfigPage() {
               <CardTitle>Create New Version</CardTitle>
             </CardHeader>
             <CardContent>
-              <form action={createPricingConfiguration} className="space-y-4">
+              <form action={async (formData) => {
+                "use server";
+                await createPricingConfiguration(formData);
+              }} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Version Name (e.g. 2024-Q3)</Label>
                   <Input name="version" required />

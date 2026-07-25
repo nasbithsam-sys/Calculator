@@ -74,6 +74,7 @@ export interface QuoteData {
   contact: CustomerContact;
   
   expertReviewRequested: boolean;
+  customerNotes?: string;
   
   createdAt: number;
   updatedAt: number;

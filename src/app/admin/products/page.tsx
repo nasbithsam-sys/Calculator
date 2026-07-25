@@ -84,7 +84,10 @@ export default async function ProductsConfigPage() {
               <CardTitle>Add Verified Product</CardTitle>
             </CardHeader>
             <CardContent>
-              <form action={createProduct} className="space-y-4">
+              <form action={async (formData) => {
+                "use server";
+                await createProduct(formData);
+              }} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Product Name</Label>
                   <Input name="name" required placeholder="Govee Permanent Lights Pro" />

@@ -8,7 +8,7 @@ export interface CalculateEstimateInput {
   stories: number;
   roofComplexity: string;
   peaks: number;
-  measuredSections?: { name: string; lengthFeet: number }[];
+  measuredSections?: { id?: string; name: string; lengthFeet: number; order?: number; type?: string }[];
   customerProvidedFeet?: number;
 }
 

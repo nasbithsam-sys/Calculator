@@ -12,6 +12,7 @@ const envSchema = z.object({
   // External providers
   NEXT_PUBLIC_MAPBOX_TOKEN: z.string().optional(),
   NEXT_PUBLIC_GOOGLE_MAPS_KEY: z.string().optional(),
+  NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: z.string().optional(),
   
   // Email configuration
   EMAIL_PROVIDER_KEY: z.string().optional(),
