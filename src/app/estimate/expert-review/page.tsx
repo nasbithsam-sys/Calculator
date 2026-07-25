@@ -15,10 +15,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useQuoteStore } from '@/store/quoteStore';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Loader2, Send } from 'lucide-react';
 import Link from 'next/link';
 
 const contactSchema = z.object({
@@ -34,7 +33,6 @@ export default function ExpertReviewPage() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
   }, []);
 
@@ -70,8 +68,6 @@ export default function ExpertReviewPage() {
       
       if (result.success) {
         setStatus('review_submitted', 'not-calculated');
-        // Add reference number to quote store if we had a place for it, 
-        // for now we'll just redirect to result page which will read the status
         router.push('/estimate/result?ref=' + result.referenceNumber);
       } else {
         setError(result.error || "Failed to submit request.");
@@ -87,95 +83,93 @@ export default function ExpertReviewPage() {
   if (!isClient) return null;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link href="/estimate">
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back
-          </Link>
+    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
+      <div className="flex items-center justify-between mb-8">
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-4 text-slate-500 hover:text-slate-900">
+          <ChevronLeft className="w-5 h-5 mr-1" />
+          Back
         </Button>
-        <div className="w-1/3">
-          <Progress value={90} className="h-2" />
-        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Request Expert Review</CardTitle>
-          <CardDescription>
-            Provide your contact details and our lighting experts will review your property information and provide a confirmed quote.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Request Expert Review</h1>
+        <p className="text-slate-500">Provide your contact details. Our lighting experts will review your property information and provide a confirmed quote.</p>
+      </div>
+
+      <Card className="border-slate-200 shadow-sm border-t-4 border-t-blue-600 overflow-hidden">
+        <CardContent className="p-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="divide-y divide-slate-100">
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Jane" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="jane@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input type="tel" placeholder="(555) 123-4567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-                  {error}
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-700">First Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Jane" className="bg-slate-50 border-slate-200 focus:bg-white" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-700">Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" className="bg-slate-50 border-slate-200 focus:bg-white" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              )}
-              <div className="flex justify-end pt-4 border-t border-slate-100">
-                <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Submit Request"}
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700">Email Address</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="jane@example.com" className="bg-slate-50 border-slate-200 focus:bg-white" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700">Phone Number</FormLabel>
+                      <FormControl>
+                        <Input type="tel" placeholder="(555) 123-4567" className="bg-slate-50 border-slate-200 focus:bg-white" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {error && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm font-medium">
+                    {error}
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-6 sm:p-8 bg-slate-50 flex justify-end">
+                <Button type="submit" className="w-full sm:w-auto py-6 px-10 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}
+                  {isSubmitting ? "Submitting..." : "Send Request"}
                 </Button>
               </div>
             </form>

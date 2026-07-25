@@ -107,103 +107,108 @@ export default function MeasurementsPage() {
   if (!isClient) return null;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
+    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
+      <div className="flex items-center justify-between mb-8">
+        <Button variant="ghost" size="sm" asChild className="-ml-4 text-slate-500 hover:text-slate-900">
           <Link href="/estimate">
-            <ChevronLeft className="w-4 h-4 mr-1" />
+            <ChevronLeft className="w-5 h-5 mr-1" />
             Back
           </Link>
         </Button>
-        <div className="w-1/3">
-          <Progress value={50} className="h-2" />
-        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>I Know My Measurements</CardTitle>
-          <CardDescription>
-            Enter the exact linear footage where you want permanent lights installed. Add multiple sections to break down the total.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">I Know My Measurements</h1>
+        <p className="text-slate-500">Enter the exact linear footage where you want permanent lights installed.</p>
+      </div>
+
+      <Card className="border-slate-200 shadow-sm border-t-4 border-t-blue-600 overflow-hidden">
+        <CardContent className="p-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="divide-y divide-slate-100">
               
-              <div className="space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 {fields.map((field, index) => (
-                  <div key={field.id} className="flex gap-4 items-start bg-slate-50 p-4 rounded-lg border border-slate-200 group">
-                    <div className="flex flex-col gap-1 items-center justify-center pt-2">
-                      <button type="button" onClick={() => index > 0 && move(index, index - 1)} disabled={index === 0} className="text-slate-400 hover:text-blue-600 disabled:opacity-30">
-                        <GripVertical className="w-4 h-4" />
-                      </button>
+                  <div key={field.id} className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center bg-white p-4 sm:py-3 sm:px-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-sm transition-all group">
+                    <div className="hidden sm:flex flex-col gap-1 items-center justify-center cursor-move text-slate-300 hover:text-blue-500 active:cursor-grabbing">
+                      <GripVertical className="w-5 h-5" onClick={() => index > 0 && move(index, index - 1)} />
                     </div>
 
-                    <div className="flex-1 space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`sections.${index}.name`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Section Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g. Front eave" {...field} list={`names-${field.name}`} />
-                              </FormControl>
-                              <datalist id={`names-${field.name}`}>
-                                {COMMON_NAMES.map(name => <option key={name} value={name} />)}
-                              </datalist>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                    <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`sections.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-8">
+                            <FormLabel className="sm:hidden text-xs font-semibold text-slate-500">Section Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Front eave" {...field} list={`names-${field.name}`} className="font-medium bg-slate-50 border-transparent focus:bg-white transition-colors" />
+                            </FormControl>
+                            <datalist id={`names-${field.name}`}>
+                              {COMMON_NAMES.map(name => <option key={name} value={name} />)}
+                            </datalist>
+                          </FormItem>
+                        )}
+                      />
 
-                        <FormField
-                          control={form.control}
-                          name={`sections.${index}.lengthFeet`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Length (feet)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g. 50" type="number" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name={`sections.${index}.lengthFeet`}
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-4 relative">
+                            <FormLabel className="sm:hidden text-xs font-semibold text-slate-500">Length</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Input placeholder="0" type="number" {...field} className="font-semibold pr-8 text-right bg-slate-50 border-transparent focus:bg-white transition-colors" />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium select-none pointer-events-none text-sm">
+                                  ft
+                                </div>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </div>
 
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="mt-7 text-slate-400 hover:text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex justify-end w-full sm:w-auto mt-2 sm:mt-0">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 w-full sm:w-auto rounded-lg">
+                        <Trash2 className="w-4 h-4 sm:mr-0 mr-2" />
+                        <span className="sm:hidden">Delete</span>
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <div className="p-4 sm:p-6 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={() => append({ id: Math.random().toString(), name: '', lengthFeet: '' })}
+                  className="w-full sm:w-auto bg-white border-dashed border-2 hover:border-solid hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-colors"
                 >
-                  <Plus className="w-4 h-4 mr-2" /> Add Section
+                  <Plus className="w-4 h-4 mr-2" /> Add another section
                 </Button>
 
-                <div className="text-right">
-                  <div className="text-sm text-slate-500 font-medium uppercase tracking-wider">Total Footage</div>
-                  <div className="text-3xl font-bold text-blue-900">{currentTotal} <span className="text-sm font-medium text-slate-500">ft</span></div>
+                <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm w-full sm:w-auto justify-between sm:justify-start">
+                  <div className="text-sm text-slate-500 font-medium uppercase tracking-wider">Total</div>
+                  <div className="text-3xl font-bold text-slate-900">{currentTotal} <span className="text-sm font-medium text-slate-500">ft</span></div>
                 </div>
               </div>
 
               {form.formState.errors.sections?.root && (
-                <div className="text-sm text-destructive">{form.formState.errors.sections.root.message}</div>
+                <div className="px-6 py-3 text-sm font-medium text-red-600 bg-red-50 border-y border-red-100">
+                  {form.formState.errors.sections.root.message}
+                </div>
               )}
 
-              <div className="flex justify-end pt-4">
-                <Button type="submit" className="w-full sm:w-auto" disabled={fields.length === 0}>
-                  View Estimate
+              <div className="p-4 sm:p-6 flex flex-col items-center justify-end">
+                <div className="text-sm text-slate-500 mb-4 text-center max-w-sm">
+                  We add a small purchasing allowance to ensure your installers have enough lights to complete the job.
+                </div>
+                <Button type="submit" className="w-full sm:w-auto py-6 px-10 text-lg font-semibold bg-slate-900 hover:bg-slate-800 text-white shadow-md hover:shadow-lg transition-all" disabled={fields.length === 0 || isCalculating}>
+                  {isCalculating && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+                  Calculate Estimate
                 </Button>
               </div>
             </form>

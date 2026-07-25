@@ -38,18 +38,18 @@ function ResultContent() {
   const isSubmitted = status === 'review_submitted' || status === 'expert_confirmed';
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300 pb-20">
       <div className="flex items-center justify-between">
         {!isSubmitted && (
-          <Button variant="ghost" size="sm" asChild className="-ml-2">
-            <Link href={`/estimate/${method === 'measurements' ? 'measurements' : method === 'quick' ? 'quick' : ''}`}>
-              <ChevronLeft className="w-4 h-4 mr-1" />
+          <Button variant="ghost" size="sm" asChild className="-ml-4 text-slate-500 hover:text-slate-900">
+            <Link href={`/estimate/${method === 'measurements' ? 'measurements' : method === 'quick' ? 'quick' : 'map'}`}>
+              <ChevronLeft className="w-5 h-5 mr-1" />
               Back
             </Link>
           </Button>
         )}
-        <div className="w-1/3 ml-auto">
-          <Progress value={100} className="h-2" />
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 ml-auto">
+          {isSubmitted ? "Complete" : "Step 3 of 3"}
         </div>
       </div>
 
@@ -57,154 +57,216 @@ function ResultContent() {
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
           {isSubmitted ? "Review Requested" : "Your Estimate Result"}
         </h1>
-        <p className="text-slate-500">
-          {isSubmitted ? "We've received your property details." : `Based on the ${method === 'measurements' ? 'measurements' : 'details'} you provided.`}
+        <p className="text-slate-500 text-lg">
+          {isSubmitted ? "We've received your property details." : `Based on the ${method === 'measurements' ? 'measurements' : method === 'map' ? 'satellite measurements' : 'details'} you provided.`}
         </p>
       </div>
 
       {isSubmitted ? (
-        <Card className="border-green-200 bg-green-50 shadow-sm">
-          <CardHeader>
-            <div className="flex items-center space-x-2 text-green-700">
-              <CheckCircle2 className="w-6 h-6" />
-              <CardTitle className="text-xl">Request Submitted Successfully</CardTitle>
+        <Card className="border-emerald-200 bg-emerald-50 shadow-sm overflow-hidden">
+          <div className="bg-emerald-600 h-2 w-full" />
+          <CardHeader className="pt-8">
+            <div className="flex items-center space-x-3 text-emerald-700">
+              <CheckCircle2 className="w-8 h-8" />
+              <CardTitle className="text-2xl">Request Submitted Successfully</CardTitle>
             </div>
-            <CardDescription className="text-green-700/80 mt-2 text-base">
-              Your reference number is <strong className="text-green-900">{refNumber || 'Pending'}</strong>.
+            <CardDescription className="text-emerald-700/80 mt-2 text-base">
+              Your reference number is <strong className="text-emerald-900 font-bold bg-emerald-100 px-2 py-1 rounded">{refNumber || 'Pending'}</strong>.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-green-800 space-y-4">
-            <p>
+          <CardContent className="text-emerald-900 space-y-6">
+            <p className="text-lg">
               Thank you for submitting your information. Our experts will review your details, photos, or plans and provide a confirmed, final estimate.
             </p>
-            <div className="bg-white/50 p-4 rounded-lg border border-green-100">
-              <h4 className="font-semibold mb-2">What happens next?</h4>
-              <ul className="list-disc pl-5 space-y-1 text-sm">
-                <li>An expert will review your property within 1-2 business days.</li>
-                <li>We may reach out if we need further clarification.</li>
-                <li>You will receive an email confirmation with the final quote.</li>
+            <div className="bg-white p-6 rounded-xl border border-emerald-100 shadow-sm">
+              <h4 className="font-semibold text-lg mb-4 flex items-center">
+                <Info className="w-5 h-5 mr-2 text-emerald-600" />
+                What happens next?
+              </h4>
+              <ul className="space-y-3 text-slate-700">
+                <li className="flex items-start">
+                  <span className="bg-emerald-100 text-emerald-700 w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm mr-3 shrink-0 mt-0.5">1</span>
+                  <span>An expert will review your property within 1-2 business days.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="bg-emerald-100 text-emerald-700 w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm mr-3 shrink-0 mt-0.5">2</span>
+                  <span>We may reach out if we need further clarification.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="bg-emerald-100 text-emerald-700 w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm mr-3 shrink-0 mt-0.5">3</span>
+                  <span>You will receive an email confirmation with the final quote.</span>
+                </li>
               </ul>
             </div>
           </CardContent>
-          <CardFooter>
-            <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto border-green-300 text-green-800 hover:bg-green-100">
+          <CardFooter className="pb-8">
+            <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto border-emerald-300 text-emerald-800 hover:bg-emerald-100 bg-white">
               <RefreshCcw className="w-4 h-4 mr-2" />
               Start New Estimate
             </Button>
           </CardFooter>
         </Card>
       ) : !isCalculated ? (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <div className="flex items-center space-x-2 text-orange-700">
-              <AlertCircle className="w-5 h-5" />
-              <CardTitle>More Information Needed</CardTitle>
+        <Card className="border-orange-200 bg-orange-50 overflow-hidden">
+          <div className="bg-orange-500 h-2 w-full" />
+          <CardHeader className="pt-8">
+            <div className="flex items-center space-x-3 text-orange-700">
+              <AlertCircle className="w-8 h-8" />
+              <CardTitle className="text-2xl">More Information Needed</CardTitle>
             </div>
-            <CardDescription className="text-orange-600/80">
-              We couldn&apos;t generate a preliminary estimate with the provided details.
+            <CardDescription className="text-orange-700/80 text-base">
+              We couldn't generate a preliminary estimate with the provided details.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-orange-800 text-sm">
-            Please ensure you have entered valid positive measurements or selected appropriate property details. If you&apos;re unsure, you can upload photos or request an expert review.
+          <CardContent className="text-orange-900 text-base">
+            Please ensure you have entered valid positive measurements or selected appropriate property details. If you're unsure, you can upload photos or request an expert review.
           </CardContent>
-          <CardFooter className="flex gap-3">
-            <Button asChild className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700">
+          <CardFooter className="flex flex-col sm:flex-row gap-3 pb-8">
+            <Button asChild className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white font-medium px-6 py-6 text-lg">
               <Link href="/estimate/expert-review">
                 Request Expert Review
               </Link>
             </Button>
-            <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto border-orange-300 text-orange-800 hover:bg-orange-100">
+            <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto border-orange-300 text-orange-800 hover:bg-orange-100 bg-white px-6 py-6 text-lg">
               Start Over
             </Button>
           </CardFooter>
         </Card>
       ) : (
-        <div className="space-y-6">
-          <Card className="border-blue-100 shadow-sm">
-            <CardHeader className="bg-blue-50/50 rounded-t-xl border-b border-blue-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl sm:text-3xl text-blue-900">
-                    ${priceRange.min.toLocaleString()} – ${priceRange.max.toLocaleString()}
-                  </CardTitle>
-                  <CardDescription className="text-blue-700 mt-1 flex items-center">
-                    <Info className="w-4 h-4 mr-1 inline" />
-                    Preliminary Estimate
-                  </CardDescription>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl sm:text-4xl font-bold text-slate-700">
-                    {estimatedLinearFeet}<span className="text-lg font-medium text-slate-500 ml-1">ft</span>
-                  </div>
-                  <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">Estimated Length</div>
-                </div>
-              </div>
-            </CardHeader>
-            
-            {quote.measurementSections && quote.measurementSections.length > 0 && (
-              <CardContent className="pt-6 border-b border-blue-100">
-                <h3 className="font-semibold text-slate-900 mb-4">Measurement Breakdown</h3>
-                <div className="space-y-2">
-                  {quote.measurementSections.map((sec) => (
-                    <div key={sec.id} className="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100">
-                      <span className="text-sm text-slate-700">{sec.name}</span>
-                      <span className="text-sm font-semibold text-slate-900">{sec.lengthFeet} ft</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            )}
-
-            {quote.recommendedKits && quote.recommendedKits.length > 0 && (
-              <CardContent className="pt-6 border-b border-blue-100">
-                <h3 className="font-semibold text-slate-900 mb-4">Recommended Kits</h3>
-                <div className="space-y-3">
-                  {quote.recommendedKits.map((product, i) => (
-                    <div key={`${product.id}-${i}`} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50 gap-2">
-                      <div>
-                        <div className="font-medium text-slate-900 text-sm">{product.name} x {product.quantity}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{product.length_feet}ft Kit</div>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-700">
-                        ${(product.price * product.quantity).toFixed(2)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            )}
-
-            {quote.adjustments && quote.adjustments.length > 0 && (
-              <CardContent className="pt-6">
-                <h3 className="font-semibold text-slate-900 mb-4">Estimated Labor & Adjustments</h3>
-                <div className="space-y-2">
-                  {quote.adjustments.map((adj, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className="text-slate-600">{adj.name}</span>
-                      <span className="text-slate-900 font-medium">
-                        {adj.amount ? `$${adj.amount.toFixed(2)}` : `x${adj.multiplier}`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            )}
-
-            <CardFooter className="bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-3 pt-6 rounded-b-xl">
-              <Button asChild className="w-full sm:w-auto">
-                <Link href="/estimate/expert-review">
-                  Request Expert Confirmation
-                </Link>
-              </Button>
-              <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto">
-                <RefreshCcw className="w-4 h-4 mr-2" />
-                Start Over
-              </Button>
-            </CardFooter>
-          </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          <div className="text-xs text-slate-500 text-center max-w-lg mx-auto">
-            This is a preliminary estimate. Prices and recommended lengths may vary after expert review and actual physical measurement of the property.
+          <div className="lg:col-span-8 space-y-8">
+            {/* High Contrast Header Card */}
+            <Card className="border-slate-800 shadow-xl overflow-hidden bg-slate-900 text-white">
+              <CardContent className="p-8 sm:p-10">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                  <div>
+                    <div className="text-slate-400 font-medium uppercase tracking-wider text-sm mb-2">Preliminary Estimate</div>
+                    <div className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white">
+                      ${priceRange.min.toLocaleString()} – ${priceRange.max.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="bg-slate-800/80 rounded-xl p-4 sm:p-6 border border-slate-700/50 w-full sm:w-auto">
+                    <div className="text-slate-400 font-medium uppercase tracking-wider text-xs mb-1">Total Linear Feet</div>
+                    <div className="text-3xl font-bold text-blue-400">
+                      {estimatedLinearFeet} <span className="text-lg font-medium text-slate-500">ft</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Breakdown Section */}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900">Estimate Breakdown</h2>
+              
+              {quote.measurementSections && quote.measurementSections.length > 0 && (
+                <Card className="border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-100">
+                    <h3 className="font-semibold text-slate-900">Measured Sections</h3>
+                  </div>
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-slate-100">
+                      {quote.measurementSections.map((sec) => (
+                        <div key={sec.id} className="flex justify-between items-center p-4 sm:px-6">
+                          <span className="text-slate-700 font-medium">{sec.name}</span>
+                          <span className="font-semibold text-slate-900 bg-slate-100 px-3 py-1 rounded-full text-sm">{sec.lengthFeet} ft</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {quote.recommendedKits && quote.recommendedKits.length > 0 && (
+                <Card className="border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-100">
+                    <h3 className="font-semibold text-slate-900">Required Materials</h3>
+                  </div>
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-slate-100">
+                      {quote.recommendedKits.map((product, i) => (
+                        <div key={`${product.id}-${i}`} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:px-6 gap-2">
+                          <div className="flex items-center gap-4">
+                            <div className="bg-blue-50 text-blue-700 font-bold w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
+                              x{product.quantity}
+                            </div>
+                            <div>
+                              <div className="font-medium text-slate-900">{product.name}</div>
+                              <div className="text-sm text-slate-500">{product.length_feet}ft Kit</div>
+                            </div>
+                          </div>
+                          <div className="font-semibold text-slate-700 sm:text-right">
+                            ${(product.price * product.quantity).toFixed(2)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {quote.adjustments && quote.adjustments.length > 0 && (
+                <Card className="border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-100">
+                    <h3 className="font-semibold text-slate-900">Installation Factors</h3>
+                  </div>
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-slate-100">
+                      {quote.adjustments.map((adj, i) => (
+                        <div key={i} className="flex justify-between items-center p-4 sm:px-6">
+                          <span className="text-slate-700">{adj.name}</span>
+                          <span className="font-medium text-slate-900">
+                            {adj.amount ? `$${adj.amount.toFixed(2)}` : `x${adj.multiplier}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-4">
+            <Card className="border-blue-200 shadow-md bg-blue-50 sticky top-6">
+              <CardHeader>
+                <CardTitle className="text-xl text-blue-900">Ready to move forward?</CardTitle>
+                <CardDescription className="text-blue-700 text-base mt-2">
+                  Have our experts review your details to finalize this quote and schedule installation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center text-blue-800 text-sm">
+                    <CheckCircle2 className="w-5 h-5 mr-3 text-blue-600 shrink-0" />
+                    Free expert verification
+                  </li>
+                  <li className="flex items-center text-blue-800 text-sm">
+                    <CheckCircle2 className="w-5 h-5 mr-3 text-blue-600 shrink-0" />
+                    Exact pricing guarantee
+                  </li>
+                  <li className="flex items-center text-blue-800 text-sm">
+                    <CheckCircle2 className="w-5 h-5 mr-3 text-blue-600 shrink-0" />
+                    No obligation to purchase
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-3">
+                <Button asChild className="w-full py-6 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                  <Link href="/estimate/expert-review">
+                    Request Final Quote
+                  </Link>
+                </Button>
+                <Button onClick={handleReset} variant="ghost" className="w-full text-slate-500 hover:text-slate-800">
+                  Recalculate Estimate
+                </Button>
+              </CardFooter>
+            </Card>
+            
+            <div className="text-xs text-slate-400 mt-6 text-center px-4">
+              This is a preliminary estimate. Final prices may vary slightly based on property inspection and actual physical measurement.
+            </div>
           </div>
         </div>
       )}

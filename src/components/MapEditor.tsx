@@ -214,99 +214,130 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 h-[600px]">
-      <div className="w-full md:w-3/4 relative rounded-xl overflow-hidden border border-slate-200">
-        <div ref={mapRef} className="w-full h-full" />
+    <div className="flex flex-col md:flex-row gap-4 h-[70vh] min-h-[500px]">
+      <div className="w-full md:w-3/4 relative rounded-xl overflow-hidden border border-slate-200 shadow-sm flex flex-col">
+        <div ref={mapRef} className="flex-1 w-full h-full" />
         
-        {/* Map Overlays & Controls */}
-        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur shadow-md rounded-lg p-2 space-y-2">
+        {/* Map Overlays & Controls - Desktop overlay, Mobile bottom bar */}
+        <div className="absolute top-4 left-4 hidden md:flex flex-col bg-white/95 backdrop-blur-sm shadow-lg rounded-xl p-3 space-y-2 w-48 border border-slate-200/60 z-10">
           {!activeSectionId ? (
-            <button onClick={startNewSection} className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium">
-              + Draw New Section
+            <button onClick={startNewSection} className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all">
+              + Add Section
             </button>
           ) : (
             <div className="space-y-2">
-              <div className="text-xs font-semibold text-blue-800">Drawing Active Section</div>
-              <button onClick={finishSection} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm font-medium">
+              <div className="text-xs font-bold text-blue-800 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded">Drawing...</div>
+              <button onClick={finishSection} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition-all">
                 Finish Section
               </button>
               <div className="flex gap-2">
-                <button onClick={undo} disabled={historyIndex < 0} className="flex-1 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-800 px-2 py-1 rounded text-xs font-medium">
+                <button onClick={undo} disabled={historyIndex < 0} className="flex-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors">
                   Undo
                 </button>
-                <button onClick={redo} disabled={historyIndex >= history.length - 1} className="flex-1 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-800 px-2 py-1 rounded text-xs font-medium">
+                <button onClick={redo} disabled={historyIndex >= history.length - 1} className="flex-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors">
                   Redo
                 </button>
               </div>
             </div>
           )}
-          <button onClick={recenter} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-1.5 rounded text-xs font-medium border border-slate-200 mt-2">
+          <button onClick={recenter} className="w-full bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-medium border border-slate-200 transition-colors">
             Recenter Map
           </button>
         </div>
+
+        {/* Mobile bottom bar */}
+        <div className="md:hidden bg-white border-t border-slate-200 p-3 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          {!activeSectionId ? (
+            <div className="flex gap-2">
+              <button onClick={startNewSection} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-semibold shadow-sm">
+                + Add Section
+              </button>
+              <button onClick={recenter} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-3 rounded-lg text-sm font-medium border border-slate-200">
+                Recenter
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button onClick={undo} disabled={historyIndex < 0} className="bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 px-4 py-3 rounded-lg text-sm font-semibold">
+                Undo
+              </button>
+              <button onClick={finishSection} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg text-sm font-semibold shadow-sm">
+                Finish
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="w-full md:w-1/4 bg-slate-50 border border-slate-200 rounded-xl p-4 overflow-y-auto">
-        <h3 className="font-semibold text-slate-900 mb-4">Measured Sections</h3>
+      {/* Sections Drawer/Sidebar */}
+      <div className="w-full md:w-1/4 bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden shadow-sm">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <h3 className="font-semibold text-slate-900">Measured Sections</h3>
+          <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">{sections.length}</span>
+        </div>
         
-        {sections.length === 0 ? (
-          <div className="text-sm text-slate-500 text-center mt-10">
-            No sections drawn. Click "Draw New Section" to start clicking points on the roof.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {sections.map(sec => (
-              <div key={sec.id} className={`p-3 rounded-lg border ${sec.id === activeSectionId ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <input 
-                    type="text" 
-                    value={sec.name}
-                    onChange={(e) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, name: e.target.value } : s))}
-                    className="font-medium text-sm text-slate-900 bg-transparent border-none p-0 focus:ring-0"
-                  />
-                  <button onClick={() => deleteSection(sec.id)} className="text-slate-400 hover:text-red-600 p-1">
-                    ×
-                  </button>
-                </div>
-                
-                <select 
-                  value={sec.type}
-                  onChange={(e) => updateSectionType(sec.id, e.target.value as any)}
-                  className="w-full text-xs p-1.5 border border-slate-200 rounded mb-2"
-                >
-                  <option value="horizontal_eave">Horizontal Eave</option>
-                  <option value="horizontal_perimeter">Horizontal Perimeter</option>
-                  <option value="sloped_peak">Sloped Peak (Caution)</option>
-                  <option value="hidden_section">Hidden Section</option>
-                  <option value="uncertain">Uncertain</option>
-                </select>
-
-                <div className="flex justify-between items-end">
-                  <div className="text-xs text-slate-500">
-                    {sec.type === 'sloped_peak' && (
-                      <span className="text-orange-600 block mb-1">Requires manual slope adjustment</span>
-                    )}
-                    {sec.path.length} points
-                  </div>
-                  <div className="font-bold text-slate-900 text-sm">
-                    {sec.lengthFeet.toFixed(1)} ft
-                  </div>
-                </div>
-                
-                {sec.id !== activeSectionId && (
-                  <button onClick={() => setActiveSectionId(sec.id)} className="w-full text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1 rounded mt-2">
-                    Edit Shape
-                  </button>
-                )}
-              </div>
-            ))}
-            
-            <div className="pt-4 border-t border-slate-200 mt-4 flex justify-between items-center">
-              <span className="text-sm font-semibold text-slate-700">Total Measured</span>
-              <span className="text-lg font-bold text-blue-700">
-                {sections.reduce((sum, s) => sum + s.lengthFeet, 0).toFixed(1)} ft
-              </span>
+        <div className="p-4 overflow-y-auto flex-1 bg-slate-50/50">
+          {sections.length === 0 ? (
+            <div className="text-sm text-slate-500 text-center mt-10 bg-white p-6 rounded-xl border border-dashed border-slate-200">
+              No sections drawn. Click "Add Section" to start clicking points on the roof.
             </div>
+          ) : (
+            <div className="space-y-3">
+              {sections.map(sec => (
+                <div key={sec.id} className={`p-3 rounded-xl border transition-all ${sec.id === activeSectionId ? 'bg-blue-50 border-blue-300 shadow-sm ring-1 ring-blue-100' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <input 
+                      type="text" 
+                      value={sec.name}
+                      onChange={(e) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, name: e.target.value } : s))}
+                      className="font-bold text-sm text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-blue-500 focus:outline-none p-0 w-3/4 pb-0.5 transition-colors"
+                    />
+                    <button onClick={() => deleteSection(sec.id)} className="text-slate-400 hover:text-red-600 bg-slate-100 hover:bg-red-50 p-1.5 rounded-md transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                    </button>
+                  </div>
+                  
+                  <select 
+                    value={sec.type}
+                    onChange={(e) => updateSectionType(sec.id, e.target.value as any)}
+                    className="w-full text-xs font-medium text-slate-700 bg-slate-50 p-2 border border-slate-200 rounded-lg mb-3 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                  >
+                    <option value="horizontal_eave">Horizontal Eave</option>
+                    <option value="horizontal_perimeter">Horizontal Perimeter</option>
+                    <option value="sloped_peak">Sloped Peak (Caution)</option>
+                    <option value="hidden_section">Hidden Section</option>
+                    <option value="uncertain">Uncertain</option>
+                  </select>
+
+                  <div className="flex justify-between items-end bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                    <div className="text-xs text-slate-500">
+                      {sec.type === 'sloped_peak' && (
+                        <span className="text-orange-600 font-medium block mb-1">Requires slope adjustment</span>
+                      )}
+                      {sec.path.length} points
+                    </div>
+                    <div className="font-bold text-slate-900 text-sm">
+                      {sec.lengthFeet.toFixed(1)} <span className="text-slate-500 font-medium text-xs">ft</span>
+                    </div>
+                  </div>
+                  
+                  {sec.id !== activeSectionId && (
+                    <button onClick={() => setActiveSectionId(sec.id)} className="w-full text-xs font-semibold bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-700 py-2 rounded-lg mt-3 transition-colors">
+                      Edit Shape
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {sections.length > 0 && (
+          <div className="p-4 bg-white border-t border-slate-200 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] z-10">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total</span>
+            <span className="text-xl font-bold text-slate-900">
+              {sections.reduce((sum, s) => sum + s.lengthFeet, 0).toFixed(1)} <span className="text-sm font-medium text-slate-500">ft</span>
+            </span>
           </div>
         )}
       </div>
