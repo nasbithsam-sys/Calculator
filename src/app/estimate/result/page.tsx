@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuoteStore } from '@/store/quoteStore';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import Link from 'next/link';
 
 import { useSearchParams } from 'next/navigation';
 
-export default function ResultPage() {
+function ResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const refNumber = searchParams.get('ref');
@@ -36,7 +36,6 @@ export default function ResultPage() {
 
   const isCalculated = status !== 'incomplete' && priceRange && estimatedLinearFeet !== null && priceRange.min > 0;
   const isSubmitted = status === 'review_submitted' || status === 'expert_confirmed';
-  const recommendedProducts = isCalculated ? recommendKits(estimatedLinearFeet!) : [];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -210,5 +209,13 @@ export default function ResultPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div></div>}>
+      <ResultContent />
+    </Suspense>
   );
 }
