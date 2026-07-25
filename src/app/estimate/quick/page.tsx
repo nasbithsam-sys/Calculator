@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuoteStore } from '@/store/quoteStore';
 import { calculateEstimate } from '@/app/actions/calculate';
-import { ChevronLeft, Loader2, Home, Zap, Ruler, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, Loader2, Home, Zap, Ruler, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 const quickEstimateSchema = z.object({
