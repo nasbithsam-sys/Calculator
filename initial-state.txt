@@ -1,0 +1,140 @@
+﻿Project State Check
+====================
+Typecheck Result: False
+
+> quick-brahmagupta@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/estimate/photos/page.tsx(195,17): error TS2322: Type 'unknown[]' is not assignable to type 'AnnotationLine[]'.
+  Type 'unknown' is not assignable to type 'AnnotationLine'.
+src/lib/readiness.ts(53,37): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+
+Lint Result: True
+
+> quick-brahmagupta@0.1.0 lint
+> eslint
+
+
+C:\Users\Dell\Documents\antigravity\quick-brahmagupta\src\app\estimate\measurements\page.tsx
+  66:27  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Users\Dell\Documents\antigravity\quick-brahmagupta\src\app\estimate\measurements\page.tsx:66:27
+  64 |
+  65 |   // Watch for live total calculation
+> 66 |   const watchedSections = form.watch("sections");
+     |                           ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  67 |   const currentTotal = watchedSections.reduce((sum, sec) => sum + (Number(sec.lengthFeet) || 0), 0);
+  68 |
+  69 |   const onSubmit = (data: z.infer<typeof measurementsSchema>) => {  react-hooks/incompatible-library
+
+C:\Users\Dell\Documents\antigravity\quick-brahmagupta\src\app\estimate\photos\page.tsx
+  154:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Dell\Documents\antigravity\quick-brahmagupta\src\app\estimate\plan\page.tsx
+  144:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Dell\Documents\antigravity\quick-brahmagupta\src\lib\email.ts
+  9:68  warning  'name' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Dell\Documents\antigravity\quick-brahmagupta\src\lib\providers\address.ts
+  34:38  warning  'id' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Dell\Documents\antigravity\quick-brahmagupta\src\utils\supabase\middleware.ts
+  21:48  warning  'options' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 6 problems (0 errors, 6 warnings)
+
+
+Test Result: True
+
+> quick-brahmagupta@0.1.0 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90mC:/Users/Dell/Documents/antigravity/quick-brahmagupta[39m
+
+ [32mΓ£ô[39m src/tests/pricing.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 12:22:49
+[2m   Duration [22m 5.14s[2m (transform 145ms, setup 0ms, import 197ms, tests 10ms, environment 4.19s)[22m
+
+
+e2e Result: True
+
+> quick-brahmagupta@0.1.0 test:e2e
+> playwright test
+
+
+node.exe : [WebServer] ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] ΓÜá...not be correct.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\Users\Dell\package-lock.json as the root 
+directory.
+[WebServer]  To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the 
+lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more 
+information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\Users\Dell\Documents\antigravity\quick-brahmagupta\package-lock.json
+[WebServer] 
+
+Running 1 test using 1 worker
+
+[1/1] [chromium] ΓÇ║ tests\flow.spec.ts:4:7 ΓÇ║ Govee Estimate Calculator Flow ΓÇ║ navigates from landing to quick estimate and shows result
+[WebServer] (node:15584) Warning: `--localstorage-file` was provided without a valid path
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[WebServer] [browser] Base UI: A component is changing the default value state of an uncontrolled RadioGroup after 
+being initialized. To suppress this warning opt to use a controlled RadioGroup. 
+  1 passed (25.7s)
+
+Build Result: False
+
+> quick-brahmagupta@0.1.0 build
+> next build
+
+node.exe : ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ΓÜá Warning: Ne...not be correct.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ We detected multiple lockfiles and selected the directory of C:\Users\Dell\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if 
+it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Dell\Documents\antigravity\quick-brahmagupta\package-lock.json
+
+Γû▓ Next.js 16.2.11 (Turbopack)
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 13.1s
+  Running TypeScript ...
+Failed to type check.
+
+./src/app/estimate/photos/page.tsx:195:17
+Type error: Type 'unknown[]' is not assignable to type 'AnnotationLine[]'.
+  Type 'unknown' is not assignable to type 'AnnotationLine'.
+
+  [90m193 |[0m               <[33mPhotoAnnotator[0m 
+  [90m194 |[0m                 imageUrl={previews[annotatingPhotoId]}
+[31m[1m>[0m [90m195 |[0m                 initialLines={quote.uploadedPhotos.find(p => p.id === 
+annotatingPhotoId)?...
+  [90m    |[0m                 [31m[1m^[0m
+  [90m196 |[0m                 onSave={onSaveAnnotations}
+  [90m197 |[0m                 onCancel={() => setAnnotatingPhotoId([36mnull[0m)}
+  [90m198 |[0m               />
+Next.js build worker exited with code: 1 and signal: null
+
