@@ -1,10 +1,7 @@
 import { getProducts, createProduct, toggleProductStatus } from "@/app/actions/admin-products";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProductForm } from "./ProductForm";
 
 export default async function ProductsConfigPage() {
   const products = await getProducts();
@@ -18,11 +15,8 @@ export default async function ProductsConfigPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         <div className="xl:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Catalog Items</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Catalog Items</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-slate-500 uppercase bg-slate-50">
@@ -74,78 +68,14 @@ export default async function ProductsConfigPage() {
                   </tbody>
                 </table>
               </div>
-            </CardContent>
-          </Card>
+          </div>
         </div>
 
         <div className="xl:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Add Verified Product</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form action={async (formData) => {
-                "use server";
-                await createProduct(formData);
-              }} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Product Name</Label>
-                  <Input name="name" required placeholder="Govee Permanent Lights Pro" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Model Number</Label>
-                    <Input name="model_number" required placeholder="H706A" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Length (ft)</Label>
-                    <Input name="length_feet" type="number" required placeholder="100" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Family</Label>
-                    <Input name="product_family" placeholder="Pro" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Generation</Label>
-                    <Input name="generation" placeholder="Gen 2" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Max Connect (ft)</Label>
-                    <Input name="max_connected_length" type="number" defaultValue="150" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Est. Retail Price ($)</Label>
-                    <Input name="price" type="number" step="0.01" required defaultValue="399.99" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Verification Status</Label>
-                  <Select name="verification_status" defaultValue="verified">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="verified">Verified</SelectItem>
-                      <SelectItem value="unverified">Unverified</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <input type="hidden" name="is_active" value="true" />
-                <input type="hidden" name="catalog_version" value="2024.1" />
-
-                <Button type="submit" className="w-full mt-4">Add Product</Button>
-              </form>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Add Verified Product</h2>
+            <ProductForm />
+          </div>
         </div>
       </div>
     </div>

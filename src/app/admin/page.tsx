@@ -1,9 +1,36 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { CheckCircle2, AlertCircle } from "lucide-react"
-import { env } from "@/lib/env"
+import { CheckCircle2, AlertCircle, Clock } from "lucide-react"
+import { checkApplicationReadiness } from "@/lib/readiness"
+import { createClient } from "@/utils/supabase/server"
+import Link from "next/link"
 
-export default function AdminDashboard() {
-  const isSupabaseConfigured = !!env.NEXT_PUBLIC_SUPABASE_URL && !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+export default async function AdminDashboard() {
+  const readiness = await checkApplicationReadiness();
+  const supabase = await createClient();
+  
+  // Fetch recent reviews
+  const { data: recentReviews } = await supabase
+    .from('expert_reviews')
+    .select(`
+      id, status, created_at,
+      quotes ( reference_number, customers ( name, email ) )
+    `)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  // Fetch stats
+  const { count: totalQuotes } = await supabase.from('quotes').select('id', { count: 'exact', head: true });
+  const { count: pendingReviews } = await supabase.from('expert_reviews').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+
+  const statusRow = (label: string, ok: boolean) => (
+    <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+      <span className="font-medium">{label}</span>
+      {ok ? (
+        <span className="flex items-center text-green-600 text-sm font-medium"><CheckCircle2 className="w-4 h-4 mr-1"/> Ready</span>
+      ) : (
+        <span className="flex items-center text-amber-600 text-sm font-medium"><AlertCircle className="w-4 h-4 mr-1"/> Needs Setup</span>
+      )}
+    </div>
+  );
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8">
@@ -12,45 +39,69 @@ export default function AdminDashboard() {
         <p className="text-slate-500 mt-1">Overview of your Govee Estimate Calculator</p>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          <div className="text-sm font-medium text-slate-500">Total Quotes</div>
+          <div className="text-3xl font-bold text-slate-900 mt-1">{totalQuotes || 0}</div>
+        </div>
+        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          <div className="text-sm font-medium text-slate-500">Pending Reviews</div>
+          <div className="text-3xl font-bold text-orange-600 mt-1">{pendingReviews || 0}</div>
+        </div>
+        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          <div className="text-sm font-medium text-slate-500">System Status</div>
+          <div className="text-lg font-bold mt-1">
+            {readiness.isFullyReady ? (
+              <span className="text-green-600 flex items-center"><CheckCircle2 className="w-5 h-5 mr-1"/> All Systems Go</span>
+            ) : (
+              <span className="text-amber-600 flex items-center"><AlertCircle className="w-5 h-5 mr-1"/> Setup Required</span>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Application Readiness</CardTitle>
-            <CardDescription>System integration status</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-              <span className="font-medium">Database (Supabase)</span>
-              {isSupabaseConfigured ? (
-                <span className="flex items-center text-green-600 text-sm"><CheckCircle2 className="w-4 h-4 mr-1"/> Connected</span>
-              ) : (
-                <span className="flex items-center text-amber-600 text-sm"><AlertCircle className="w-4 h-4 mr-1"/> Missing Keys</span>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-              <span className="font-medium">Pricing Configuration</span>
-              <span className="flex items-center text-amber-600 text-sm"><AlertCircle className="w-4 h-4 mr-1"/> Needs Setup</span>
-            </div>
+        {/* Readiness */}
+        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 mb-4">System Readiness</h2>
+          <div className="space-y-3">
+            {statusRow('Database (Supabase)', readiness.database.connected)}
+            {statusRow('Active Pricing', readiness.pricing.hasActiveVersion)}
+            {statusRow('Verified Products', readiness.products.hasVerifiedProducts)}
+            {statusRow('Photo Storage', readiness.storage.photosBucketExists)}
+            {statusRow('Plan Storage', readiness.storage.plansBucketExists)}
+            {statusRow('Google Maps', readiness.providers.mapConfigured)}
+          </div>
+        </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-              <span className="font-medium">Product Catalog</span>
-              <span className="flex items-center text-amber-600 text-sm"><AlertCircle className="w-4 h-4 mr-1"/> Needs Setup</span>
+        {/* Recent Activity */}
+        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 mb-4">Recent Activity</h2>
+          {recentReviews && recentReviews.length > 0 ? (
+            <div className="space-y-3">
+              {recentReviews.map((review: any) => (
+                <Link key={review.id} href={`/admin/quotes/${review.quotes?.id || review.id}`} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
+                  <div>
+                    <div className="font-medium text-sm text-slate-900">{review.quotes?.customers?.name || 'Unknown'}</div>
+                    <div className="text-xs text-slate-500">{review.quotes?.reference_number}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${review.status === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                      {review.status}
+                    </span>
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    <span className="text-xs text-slate-400">{new Date(review.created_at).toLocaleDateString()}</span>
+                  </div>
+                </Link>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest expert review requests</CardDescription>
-          </CardHeader>
-          <CardContent>
+          ) : (
             <div className="text-center py-8 text-slate-500 text-sm">
-              No quotes or review requests yet.
+              No review requests yet.
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </div>
   )

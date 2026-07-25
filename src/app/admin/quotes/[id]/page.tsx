@@ -38,20 +38,24 @@ export default async function AdminQuoteDetailPage(props: { params: Promise<{ id
 
   const review = quote.expert_reviews?.[0]
 
-  const claimReview = async () => {
+  const claimReview = async (formData: FormData) => {
     "use server"
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
     if (user && review) {
+      const notes = formData.get('notes') as string
+      const overridePriceStr = formData.get('override_price') as string
+      const finalPrice = overridePriceStr ? Number(overridePriceStr) : (quote.estimated_price_max || quote.estimated_price_min)
+      
       await supabase
         .from('expert_reviews')
-        .update({ status: 'reviewed', reviewed_by: user.id })
+        .update({ status: 'reviewed', reviewed_by: user.id, notes: notes || review.notes })
         .eq('id', review.id)
         
       await supabase
         .from('quotes')
-        .update({ status: 'expert_confirmed', expert_confirmed_price: quote.estimated_price_max || quote.estimated_price_min })
+        .update({ status: 'expert_confirmed', expert_confirmed_price: finalPrice })
         .eq('id', quote.id)
         
       revalidatePath(`/admin/quotes/${quoteId}`)
@@ -179,8 +183,17 @@ export default async function AdminQuoteDetailPage(props: { params: Promise<{ id
                 This quote requires manual review. Check the provided photos or measurements, adjust the final length/price if necessary, and confirm the quote.
               </p>
               <div className="space-y-2">
+                <label className="text-sm font-medium">Final Price Override ($)</label>
+                <input 
+                  type="number" 
+                  name="override_price" 
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  defaultValue={quote.estimated_price_max || quote.estimated_price_min} 
+                />
+              </div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Internal Notes</label>
-                <Textarea placeholder="Add notes before confirming..." />
+                <Textarea name="notes" placeholder="Add notes before confirming..." defaultValue={review.notes || ""} />
               </div>
               <Button type="submit">Confirm & Finalize Quote</Button>
             </form>

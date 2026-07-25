@@ -112,10 +112,9 @@ export async function calculateEstimate(input: CalculateEstimateInput): Promise<
     catalogVersion = sortedProducts[0].catalog_version;
     // Simple greedy bin-packing
     let remaining = recommendedPurchasingFeet;
-    
     while (remaining > 0) {
+      // Find largest kit that fits, or smallest kit if none fit
       const kit = sortedProducts.find(p => p.length_feet <= remaining) || sortedProducts[sortedProducts.length - 1];
-      
       const existing = recommendedKits.find(k => k.id === kit.id);
       if (existing) {
         existing.quantity += 1;
@@ -129,12 +128,6 @@ export async function calculateEstimate(input: CalculateEstimateInput): Promise<
         });
       }
       remaining -= kit.length_feet;
-      if (kit.length_feet >= remaining && remaining > 0) { // Catch-all for last kit to cover remainder
-        const existingLast = recommendedKits.find(k => k.id === kit.id);
-        if (existingLast) existingLast.quantity += 1;
-        else recommendedKits.push({ id: kit.id, name: kit.name, length_feet: kit.length_feet, quantity: 1, price: kit.price });
-        break;
-      }
     }
   }
 

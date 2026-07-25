@@ -81,7 +81,7 @@ export default function ExpertReviewPage() {
   if (!isClient) return null;
 
   return (
-    <div className="max-w-3xl mx-auto animate-in fade-in duration-300 pb-20">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 animate-in fade-in duration-300 pb-20">
       
       <div className="flex items-center justify-between mb-10">
         <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-4 text-slate-500 hover:text-slate-900 focus-ring">

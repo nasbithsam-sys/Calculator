@@ -2,8 +2,7 @@ import { getPricingConfigurations, createPricingConfiguration, activatePricingCo
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PricingForm } from "./PricingForm";
 
 export default async function PricingConfigPage() {
   const configs = await getPricingConfigurations();
@@ -17,11 +16,8 @@ export default async function PricingConfigPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         <div className="xl:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Versions</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Existing Versions</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-slate-500 uppercase bg-slate-50">
@@ -66,80 +62,13 @@ export default async function PricingConfigPage() {
                   </tbody>
                 </table>
               </div>
-            </CardContent>
-          </Card>
+          </div>
         </div>
 
-        <div className="xl:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Version</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form action={async (formData) => {
-                "use server";
-                await createPricingConfiguration(formData);
-              }} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Version Name (e.g. 2024-Q3)</Label>
-                  <Input name="version" required />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Base Labor ($/ft)</Label>
-                    <Input name="base_labor_price_per_foot" type="number" step="0.01" required defaultValue="5.00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Minimum Charge ($)</Label>
-                    <Input name="minimum_installation_charge" type="number" step="0.01" required defaultValue="250.00" />
-                  </div>
-                </div>
-                
-                <h4 className="font-semibold text-sm pt-2">Multipliers</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>2-Story</Label>
-                    <Input name="two_story_multiplier" type="number" step="0.01" required defaultValue="1.15" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>3-Story</Label>
-                    <Input name="three_story_multiplier" type="number" step="0.01" required defaultValue="1.30" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Moderate Roof</Label>
-                    <Input name="moderate_roof_multiplier" type="number" step="0.01" required defaultValue="1.10" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Complex Roof</Label>
-                    <Input name="complex_roof_multiplier" type="number" step="0.01" required defaultValue="1.25" />
-                  </div>
-                </div>
-
-                <h4 className="font-semibold text-sm pt-2">Flat Charges & Allowances</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Peak Charge ($)</Label>
-                    <Input name="peak_charge" type="number" step="0.01" defaultValue="50.00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Access Charge ($)</Label>
-                    <Input name="difficult_access_charge" type="number" step="0.01" defaultValue="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Purchasing Allowance (%)</Label>
-                    <Input name="purchasing_allowance_percent" type="number" step="0.1" defaultValue="10" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Uncertainty Range (%)</Label>
-                    <Input name="estimate_uncertainty_percent" type="number" step="0.1" defaultValue="5" />
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full mt-4">Create Version</Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Create New Version</h2>
+            <PricingForm />
+          </div>
       </div>
     </div>
   )
