@@ -3,10 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { useQuoteStore } from '@/store/quoteStore';
-import { ChevronLeft, FileText, Trash2, UploadCloud } from 'lucide-react';
+import { ChevronLeft, FileText, Trash2, UploadCloud, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PlanPage() {
@@ -17,9 +15,9 @@ export default function PlanPage() {
 
   const previewsRef = useRef<Record<string, string>>({});
   const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
     setMethod('plan');
   }, [setMethod]);
@@ -29,8 +27,6 @@ export default function PlanPage() {
       Object.values(previewsRef.current).forEach(url => URL.revokeObjectURL(url));
     };
   }, []);
-
-  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -119,81 +115,112 @@ export default function PlanPage() {
   if (!isClient) return null;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
+    <div className="max-w-[1200px] mx-auto animate-in fade-in duration-300 pb-20 px-4 sm:px-6">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <Button variant="ghost" size="sm" asChild className="-ml-4 text-slate-500 hover:text-slate-900 focus-ring">
           <Link href="/estimate">
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back
+            <ChevronLeft className="w-5 h-5 mr-1" /> Back
           </Link>
         </Button>
-        <div className="w-1/3">
-          <Progress value={50} className="h-2" />
+      </div>
+
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Upload Architectural Plans</h1>
+          <p className="text-lg text-slate-600 font-medium">Have blueprints or sketches? Upload them here, and our experts will review them to generate an accurate estimate.</p>
+        </div>
+        
+        <div className="hidden md:flex items-center gap-3">
+          <Button 
+            onClick={onContinue} 
+            disabled={quote.uploadedPlans.length === 0 || isUploading}
+            className="py-6 px-8 text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-md transition-transform active:scale-[0.98]"
+          >
+            {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : 'Submit for Review'}
+            {!isUploading && <ArrowRight className="w-5 h-5 ml-2" />}
+          </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload a Plan or Drawing</CardTitle>
-          <CardDescription>
-            Upload architectural plans or drawings of your property for an accurate estimate.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition-colors">
-            <input 
-              type="file" 
-              id="plan-upload" 
-              className="hidden" 
-              accept="image/jpeg, image/png, image/webp, application/pdf"
-              onChange={handleFileChange}
-            />
-            <label htmlFor="plan-upload" className="cursor-pointer flex flex-col items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 rounded-sm">
-              <UploadCloud className="w-10 h-10 text-slate-400 mb-4" />
-              <div className="text-sm font-medium text-slate-900 mb-1">Click to upload a plan</div>
-              <div className="text-xs text-slate-500">PDF, PNG, JPG up to 10MB</div>
-            </label>
-          </div>
-          
-          {error && (
-            <div className="text-sm font-medium text-destructive" aria-live="polite">{error}</div>
-          )}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in">
+          <AlertCircle className="w-6 h-6 shrink-0 text-red-600 mt-0.5" />
+          <div className="text-sm font-bold text-red-800 leading-relaxed">{error}</div>
+        </div>
+      )}
 
-          {quote.uploadedPlans.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-slate-900">Uploaded Plans</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {quote.uploadedPlans.map((plan) => (
-                  <div key={plan.id} className="relative group rounded-lg overflow-hidden border border-slate-200 aspect-square bg-slate-100">
-                    {previews[plan.id] ? (
-                      <img src={previews[plan.id]} alt={plan.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                        <FileText className="w-8 h-8 text-slate-400 mb-2" />
-                        <span className="text-xs text-slate-500 text-center truncate w-full" title={plan.name}>{plan.name}</span>
-                        {plan.type.startsWith('image/') && <span className="text-[10px] text-orange-500 mt-1 text-center font-medium">Please re-upload</span>}
-                      </div>
-                    )}
+      <div className="bg-white p-6 sm:p-8 rounded-3xl card-shadow border border-slate-200">
+        
+        {/* Upload Dropzone */}
+        <div className="border-2 border-dashed border-primary/30 rounded-2xl p-10 text-center bg-blue-50/30 hover:bg-blue-50/60 transition-colors mb-8 group">
+          <input 
+            type="file" 
+            id="plan-upload" 
+            className="hidden" 
+            accept="image/jpeg, image/png, image/webp, application/pdf"
+            onChange={handleFileChange}
+            disabled={isUploading}
+          />
+          <label htmlFor="plan-upload" className={`cursor-pointer flex flex-col items-center focus-visible:outline-none ${isUploading ? 'opacity-50' : ''}`}>
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-105 transition-transform">
+              {isUploading ? <Loader2 className="w-8 h-8 text-primary animate-spin" /> : <UploadCloud className="w-8 h-8 text-primary" />}
+            </div>
+            <div className="text-lg font-bold text-slate-900 mb-1">{isUploading ? 'Uploading...' : 'Click to upload plans'}</div>
+            <div className="text-sm font-medium text-slate-500">PDF, PNG, or JPG up to 10MB</div>
+          </label>
+        </div>
+
+        {/* File Grid */}
+        {quote.uploadedPlans.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-slate-400" />
+              Uploaded Files <span className="text-slate-400 text-sm font-medium">({quote.uploadedPlans.length})</span>
+            </h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {quote.uploadedPlans.map((plan) => (
+                <div key={plan.id} className="relative group rounded-2xl overflow-hidden border border-slate-200 aspect-square bg-slate-50 shadow-sm transition-all hover:shadow-md">
+                  {previews[plan.id] ? (
+                    <img src={previews[plan.id]} alt={plan.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-slate-100">
+                      <FileText className="w-12 h-12 text-slate-400 mb-3" />
+                      <span className="text-sm font-bold text-slate-700 text-center truncate w-full" title={plan.name}>{plan.name}</span>
+                      {plan.type === 'application/pdf' && <span className="text-xs text-slate-500 mt-1 font-medium bg-slate-200 px-2 py-0.5 rounded-full">PDF Document</span>}
+                    </div>
+                  )}
+                  
+                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[1px]">
                     <button 
                       onClick={() => handleRemove(plan.id)}
-                      className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-md text-slate-600 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100"
+                      className="bg-white p-3 rounded-full text-slate-600 hover:text-red-600 hover:scale-110 transition-all shadow-lg"
                       aria-label={`Remove ${plan.name}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          )}
-
-          <div className="flex justify-end pt-4 border-t border-slate-100">
-            <Button onClick={onContinue} disabled={quote.uploadedPlans.length === 0} className="w-full sm:w-auto">
-              Submit for Review
-            </Button>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+
+      {/* Mobile Actions */}
+      <div className="md:hidden mt-8 flex flex-col gap-3">
+        <Button 
+          onClick={onContinue} 
+          disabled={quote.uploadedPlans.length === 0 || isUploading}
+          className="w-full py-7 text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-md active:scale-[0.98]"
+        >
+          {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : 'Submit for Review'}
+          {!isUploading && <ArrowRight className="w-5 h-5 ml-2" />}
+        </Button>
+      </div>
+
     </div>
   );
 }

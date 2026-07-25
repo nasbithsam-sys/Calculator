@@ -49,41 +49,62 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Warm off-white background */
+  --background: oklch(0.985 0.005 90);
+  /* Dark charcoal foreground */
+  --foreground: oklch(0.2 0.01 240);
+  
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.2 0.01 240);
+  
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.2 0.01 240);
+  
+  /* Restrained Blue Primary */
+  --primary: oklch(0.5 0.15 250); 
+  --primary-foreground: oklch(1 0 0);
+  
+  --secondary: oklch(0.95 0.01 240);
+  --secondary-foreground: oklch(0.3 0.02 240);
+  
+  --muted: oklch(0.95 0.01 240);
+  --muted-foreground: oklch(0.5 0.01 240);
+  
+  /* Warm accent (amber/orange) */
+  --accent: oklch(0.7 0.15 50);
+  --accent-foreground: oklch(0.2 0.02 50);
+  
+  /* Clear semantics */
+  --destructive: oklch(0.55 0.2 25); /* Clear red */
+  --success: oklch(0.6 0.15 140); /* Soft green */
+  --warning: oklch(0.7 0.15 70); /* Soft amber */
+  
+  --border: oklch(0.92 0.01 240);
+  --input: oklch(0.92 0.01 240);
+  --ring: oklch(0.5 0.15 250);
+  
+  --radius: 0.75rem; /* Larger radius for premium feel */
+  
+  /* Chart colors - coordinated to brand */
+  --chart-1: oklch(0.5 0.15 250);
+  --chart-2: oklch(0.7 0.15 50);
+  --chart-3: oklch(0.6 0.15 140);
+  --chart-4: oklch(0.7 0.15 70);
+  --chart-5: oklch(0.4 0.1 200);
+
+  /* Sidebar */
+  --sidebar: oklch(0.985 0.005 90);
+  --sidebar-foreground: oklch(0.2 0.01 240);
+  --sidebar-primary: oklch(0.5 0.15 250);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.01 240);
+  --sidebar-accent-foreground: oklch(0.3 0.02 240);
+  --sidebar-border: oklch(0.92 0.01 240);
+  --sidebar-ring: oklch(0.5 0.15 250);
 }
 
 .dark {
+  /* We will force light mode for the customer app, but keep this for standard compliance */
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -102,19 +123,6 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
@@ -122,9 +130,25 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
   }
   html {
-    @apply font-sans;
+    @apply font-sans scroll-smooth;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight text-slate-900;
+  }
+}
+
+/* Base custom classes for recurring layout pieces */
+@layer utilities {
+  .page-container {
+    @apply w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .card-shadow {
+    @apply shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-slate-200/60;
+  }
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
   }
 }

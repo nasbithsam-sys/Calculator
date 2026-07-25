@@ -3,10 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { useQuoteStore } from '@/store/quoteStore';
-import { ChevronLeft, Image as ImageIcon, Trash2, UploadCloud, Edit3 } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, Trash2, UploadCloud, Edit3, ArrowRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import PhotoAnnotator, { AnnotationLine } from '@/components/PhotoAnnotator';
 
@@ -19,9 +17,9 @@ export default function PhotosPage() {
   const previewsRef = useRef<Record<string, string>>({});
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [annotatingPhotoId, setAnnotatingPhotoId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
     setMethod('photos');
   }, [setMethod]);
@@ -32,8 +30,6 @@ export default function PhotosPage() {
       Object.values(previewsRef.current).forEach(url => URL.revokeObjectURL(url));
     };
   }, []);
-
-  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -77,7 +73,6 @@ export default function PhotosPage() {
 
       const data = await res.json();
 
-      // Replace local preview with server signed URL for persistence across reloads
       setPreviews(prev => ({ ...prev, [id]: data.url }));
       previewsRef.current = { ...previewsRef.current, [id]: data.url };
 
@@ -88,11 +83,10 @@ export default function PhotosPage() {
         type: file.type,
         createdAt: Date.now(),
         annotations: [],
-        storagePath: data.path, // We would need to add this to QuoteData type if not already there, but for now we'll just store it if needed
+        storagePath: data.path,
       });
     } catch (err: any) {
       setError(err.message || "Failed to upload photo. Please try again.");
-      // Rollback optimistic preview
       handleRemove(id);
     } finally {
       setIsUploading(false);
@@ -133,7 +127,6 @@ export default function PhotosPage() {
       return;
     }
     
-    // Check if ALL photos with targets are calibrated
     let totalTargetLengthFeet = 0;
     let allCalibrated = true;
     let hasTargets = false;
@@ -146,7 +139,6 @@ export default function PhotosPage() {
         if (!p.calibrationResult?.isCalibrated) {
           allCalibrated = false;
         } else {
-          // Calculate length for targets in this photo
           targets.forEach((t: any) => {
             totalTargetLengthFeet += t.pixels / p.calibrationResult.calibrationRatio;
           });
@@ -155,8 +147,8 @@ export default function PhotosPage() {
     }
 
     if (hasTargets && allCalibrated) {
-      // Scaled calculation
       setIsUploading(true);
+      setError(null);
       try {
         const { calculateEstimate } = await import('@/app/actions/calculate');
         const result = await calculateEstimate({
@@ -175,7 +167,6 @@ export default function PhotosPage() {
         setFeet(totalTargetLengthFeet, 'customer');
         setFeet(result.estimatedLinearFeet, 'estimated');
         
-        // Dynamic import because setCalculationResult wasn't in original imports of this file
         useQuoteStore.getState().setCalculationResult(result as any);
         setStatus('preliminary', 'medium');
         router.push('/estimate/result');
@@ -185,7 +176,6 @@ export default function PhotosPage() {
         setIsUploading(false);
       }
     } else {
-      // Expert Review
       setStatus('ready-for-review', 'not-calculated');
       router.push('/estimate/expert-review');
     }
@@ -194,108 +184,148 @@ export default function PhotosPage() {
   if (!isClient) return null;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
+    <div className="max-w-[1200px] mx-auto animate-in fade-in duration-300 pb-20 px-4 sm:px-6">
+      
+      {/* Header and Progress */}
+      <div className="flex items-center justify-between mb-8">
+        <Button variant="ghost" size="sm" asChild className="-ml-4 text-slate-500 hover:text-slate-900 focus-ring">
           <Link href="/estimate">
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back
+            <ChevronLeft className="w-5 h-5 mr-1" /> Back
           </Link>
         </Button>
-        <div className="w-1/3">
-          <Progress value={50} className="h-2" />
+      </div>
+
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Upload House Photos</h1>
+          <p className="text-lg text-slate-600 font-medium">Upload photos of your home. You can optionally draw on them to measure lengths.</p>
+        </div>
+        
+        <div className="hidden md:flex items-center gap-3">
+          <Button 
+            onClick={onContinue} 
+            disabled={quote.uploadedPhotos.length === 0 || annotatingPhotoId !== null || isUploading}
+            className="py-6 px-8 text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-md transition-transform active:scale-[0.98]"
+          >
+            {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : 'Continue'}
+            {!isUploading && <ArrowRight className="w-5 h-5 ml-2" />}
+          </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload House Photos</CardTitle>
-          <CardDescription>
-            Upload clear photos of the areas where you want permanent lights installed. Click the edit icon to draw lighting lines.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition-colors">
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in">
+          <AlertCircle className="w-6 h-6 shrink-0 text-red-600 mt-0.5" />
+          <div className="text-sm font-bold text-red-800 leading-relaxed">{error}</div>
+        </div>
+      )}
+
+      {annotatingPhotoId && previews[annotatingPhotoId] ? (
+        <div className="bg-slate-950 rounded-3xl overflow-hidden card-shadow animate-in slide-in-from-bottom-4 zoom-in-95 duration-300">
+          <PhotoAnnotator 
+            imageUrl={previews[annotatingPhotoId]}
+            initialLines={(quote.uploadedPhotos.find(p => p.id === annotatingPhotoId)?.annotations as AnnotationLine[]) || []}
+            onSave={onSaveAnnotations}
+            onCancel={() => setAnnotatingPhotoId(null)}
+          />
+        </div>
+      ) : (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl card-shadow border border-slate-200">
+          
+          {/* Upload Dropzone */}
+          <div className="border-2 border-dashed border-primary/30 rounded-2xl p-10 text-center bg-blue-50/30 hover:bg-blue-50/60 transition-colors mb-8 group">
             <input 
               type="file" 
               id="photo-upload" 
               className="hidden" 
               accept="image/jpeg, image/png, image/webp"
               onChange={handleFileChange}
+              disabled={isUploading}
             />
-            <label htmlFor="photo-upload" className="cursor-pointer flex flex-col items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 rounded-sm">
-              <UploadCloud className="w-10 h-10 text-slate-400 mb-4" />
-              <div className="text-sm font-medium text-slate-900 mb-1">Click to upload a photo</div>
-              <div className="text-xs text-slate-500">PNG, JPG up to 5MB</div>
+            <label htmlFor="photo-upload" className={`cursor-pointer flex flex-col items-center focus-visible:outline-none ${isUploading ? 'opacity-50' : ''}`}>
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-105 transition-transform">
+                {isUploading ? <Loader2 className="w-8 h-8 text-primary animate-spin" /> : <UploadCloud className="w-8 h-8 text-primary" />}
+              </div>
+              <div className="text-lg font-bold text-slate-900 mb-1">{isUploading ? 'Uploading...' : 'Click to upload photos'}</div>
+              <div className="text-sm font-medium text-slate-500">PNG or JPG up to 5MB</div>
             </label>
           </div>
-          
-          {error && (
-            <div className="text-sm font-medium text-destructive" aria-live="polite">{error}</div>
-          )}
 
-          {quote.uploadedPhotos.length > 0 && !annotatingPhotoId && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-slate-900">Uploaded Photos</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {quote.uploadedPhotos.map((photo) => (
-                  <div key={photo.id} className="relative group rounded-lg overflow-hidden border border-slate-200 aspect-square bg-slate-100">
-                    {previews[photo.id] ? (
-                      <img src={previews[photo.id]} alt={photo.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                        <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
-                        <span className="text-xs text-slate-500 text-center truncate w-full" title={photo.name}>{photo.name}</span>
-                        <span className="text-[10px] text-orange-500 mt-1 text-center font-medium">Please re-upload</span>
+          {/* Photo Grid */}
+          {quote.uploadedPhotos.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-slate-400" />
+                Uploaded Photos <span className="text-slate-400 text-sm font-medium">({quote.uploadedPhotos.length})</span>
+              </h3>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {quote.uploadedPhotos.map((photo) => {
+                  const p = photo as any;
+                  const isCalibrated = p.calibrationResult?.isCalibrated;
+                  
+                  return (
+                    <div key={photo.id} className="relative group rounded-2xl overflow-hidden border border-slate-200 aspect-square bg-slate-100 shadow-sm transition-all hover:shadow-md">
+                      {previews[photo.id] ? (
+                        <img src={previews[photo.id]} alt={photo.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                          <Loader2 className="w-8 h-8 text-slate-400 animate-spin mb-2" />
+                          <span className="text-xs text-slate-500 text-center truncate w-full" title={photo.name}>{photo.name}</span>
+                        </div>
+                      )}
+                      
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[1px]">
+                        <button
+                          onClick={() => setAnnotatingPhotoId(photo.id)}
+                          className="bg-white p-3 rounded-full text-primary hover:text-primary hover:scale-110 transition-all shadow-lg"
+                          aria-label="Annotate photo"
+                        >
+                          <Edit3 className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleRemove(photo.id)}
+                          className="bg-white p-3 rounded-full text-slate-600 hover:text-red-600 hover:scale-110 transition-all shadow-lg"
+                          aria-label={`Remove ${photo.name}`}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                    )}
-                    
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setAnnotatingPhotoId(photo.id)}
-                        className="bg-white p-2 rounded-full text-blue-600 hover:text-blue-700 hover:scale-105 transition-all"
-                        aria-label="Annotate photo"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleRemove(photo.id)}
-                        className="bg-white p-2 rounded-full text-slate-600 hover:text-destructive hover:scale-105 transition-all"
-                        aria-label={`Remove ${photo.name}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+
+                      {/* Status Badges */}
+                      <div className="absolute top-3 left-3 flex flex-col gap-1 pointer-events-none">
+                        {isCalibrated && (
+                          <div className="bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Calibrated
+                          </div>
+                        )}
+                        {photo.annotations && photo.annotations.length > 0 && !isCalibrated && (
+                          <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm">
+                            Lines Drawn
+                          </div>
+                        )}
+                      </div>
                     </div>
-
-                    {photo.annotations && photo.annotations.length > 0 && (
-                      <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
-                        Annotated
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {annotatingPhotoId && previews[annotatingPhotoId] && (
-            <div className="border rounded-xl p-4 bg-slate-50">
-              <PhotoAnnotator 
-                imageUrl={previews[annotatingPhotoId]}
-                initialLines={(quote.uploadedPhotos.find(p => p.id === annotatingPhotoId)?.annotations as AnnotationLine[]) || []}
-                onSave={onSaveAnnotations}
-                onCancel={() => setAnnotatingPhotoId(null)}
-              />
-            </div>
-          )}
+      {/* Mobile Actions */}
+      <div className="md:hidden mt-8 flex flex-col gap-3">
+        <Button 
+          onClick={onContinue} 
+          disabled={quote.uploadedPhotos.length === 0 || annotatingPhotoId !== null || isUploading}
+          className="w-full py-7 text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-md active:scale-[0.98]"
+        >
+          {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : 'Continue'}
+          {!isUploading && <ArrowRight className="w-5 h-5 ml-2" />}
+        </Button>
+      </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-100">
-            <Button onClick={onContinue} disabled={quote.uploadedPhotos.length === 0 || annotatingPhotoId !== null || isUploading} className="w-full sm:w-auto">
-              {isUploading ? "Processing..." : "Continue"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
