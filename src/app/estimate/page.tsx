@@ -19,38 +19,30 @@ export default async function EstimateLandingPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {readiness.methods.addressAvailable && (
-          <MethodCard 
-            href="/estimate/address"
-            icon={<MapPin className="w-6 h-6 text-blue-600" />}
-            title="Enter My Address"
-            description="Let us analyze available property information."
-          />
-        )}
-        {readiness.methods.photosAvailable && (
-          <MethodCard 
-            href="/estimate/photos"
-            icon={<ImageIcon className="w-6 h-6 text-blue-600" />}
-            title="Upload House Photos"
-            description="Upload photos and mark where you want lights."
-          />
-        )}
-        {readiness.methods.mapAvailable && (
-          <MethodCard 
-            href="/estimate/map"
-            icon={<Map className="w-6 h-6 text-blue-600" />}
-            title="Mark My Roofline"
-            description="Draw the lighting sections on an aerial map."
-          />
-        )}
-        {readiness.methods.quickAvailable && (
-          <MethodCard 
-            href="/estimate/quick"
-            icon={<Zap className="w-6 h-6 text-blue-600" />}
-            title="Quick Estimate"
-            description="Answer a few simple questions for an instant price range."
-          />
-        )}
+        <MethodCard 
+          href="/estimate/address"
+          icon={<MapPin className="w-6 h-6 text-blue-600" />}
+          title="Enter My Address"
+          description="Let us analyze available property information."
+        />
+        <MethodCard 
+          href="/estimate/photos"
+          icon={<ImageIcon className="w-6 h-6 text-blue-600" />}
+          title="Upload House Photos"
+          description="Upload photos and mark where you want lights."
+        />
+        <MethodCard 
+          href="/estimate/map"
+          icon={<Map className="w-6 h-6 text-blue-600" />}
+          title="Mark My Roofline"
+          description="Draw the lighting sections on an aerial map."
+        />
+        <MethodCard 
+          href="/estimate/quick"
+          icon={<Zap className="w-6 h-6 text-blue-600" />}
+          title="Quick Estimate"
+          description="Answer a few simple questions for an instant price range."
+        />
       </div>
 
       <div className="space-y-4 pt-6 border-t border-slate-200">
@@ -58,20 +50,16 @@ export default async function EstimateLandingPage() {
           Other ways to estimate
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {readiness.methods.measurementsAvailable && (
-            <SecondaryMethodCard 
-              href="/estimate/measurements"
-              icon={<Ruler className="w-4 h-4 mr-2 text-slate-500" />}
-              title="I Know My Measurements"
-            />
-          )}
-          {readiness.methods.planAvailable && (
-            <SecondaryMethodCard 
-              href="/estimate/plan"
-              icon={<FileText className="w-4 h-4 mr-2 text-slate-500" />}
-              title="Upload a Plan or Drawing"
-            />
-          )}
+          <SecondaryMethodCard 
+            href="/estimate/measurements"
+            icon={<Ruler className="w-4 h-4 mr-2 text-slate-500" />}
+            title="I Know My Measurements"
+          />
+          <SecondaryMethodCard 
+            href="/estimate/plan"
+            icon={<FileText className="w-4 h-4 mr-2 text-slate-500" />}
+            title="Upload a Plan or Drawing"
+          />
           <SecondaryMethodCard 
             href="/estimate/expert-review"
             icon={<UserCheck className="w-4 h-4 mr-2 text-slate-500" />}
