@@ -105,7 +105,7 @@ export async function calculateEstimate(input: CalculateEstimateInput): Promise<
   // 5. Recommend valid Govee product combinations
   // Find the largest kit that covers the recommended purchasing feet
   const sortedProducts = [...products].sort((a, b) => b.length_feet - a.length_feet);
-  let recommendedKits = [];
+  let recommendedKits: any[] = [];
   let catalogVersion = "";
   
   if (sortedProducts.length > 0) {
@@ -139,7 +139,7 @@ export async function calculateEstimate(input: CalculateEstimateInput): Promise<
   }
 
   // 6. Calculate individual pricing adjustments
-  let adjustments = [];
+  let adjustments: any[] = [];
   
   let basePrice = estimatedLinearFeet * pricingConfig.base_labor_price_per_foot;
   adjustments.push({ name: "Base Labor", amount: basePrice });
