@@ -35,32 +35,44 @@ export function PricingForm() {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Base Labor ($/ft)</Label>
-          <Input name="base_labor_price_per_foot" type="number" step="0.01" required defaultValue="5.00" />
+          <Label>Purchasing Allowance (%)</Label>
+          <Input name="purchasing_allowance_percent" type="number" step="0.1" required defaultValue="15.0" />
         </div>
         <div className="space-y-2">
-          <Label>Minimum Charge ($)</Label>
-          <Input name="minimum_installation_charge" type="number" step="0.01" required defaultValue="250.00" />
+          <Label>Minimum Installation ($)</Label>
+          <Input name="minimum_installation_charge" type="number" step="0.01" required defaultValue="650.00" />
         </div>
       </div>
       
-      <h4 className="font-semibold text-sm pt-2">Multipliers</h4>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>2-Story</Label>
-          <Input name="two_story_multiplier" type="number" step="0.01" required defaultValue="1.15" />
+      <h4 className="font-semibold text-sm pt-2">Job Size Thresholds (Linear Feet)</h4>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="space-y-1">
+          <Label className="text-xs">Small (≤ ft)</Label>
+          <Input name="threshold_small" type="number" defaultValue="100" />
         </div>
-        <div className="space-y-2">
-          <Label>3-Story</Label>
-          <Input name="three_story_multiplier" type="number" step="0.01" required defaultValue="1.30" />
+        <div className="space-y-1">
+          <Label className="text-xs">Medium (≤ ft)</Label>
+          <Input name="threshold_medium" type="number" defaultValue="180" />
         </div>
-        <div className="space-y-2">
-          <Label>Moderate Roof</Label>
-          <Input name="moderate_roof_multiplier" type="number" step="0.01" required defaultValue="1.10" />
+        <div className="space-y-1">
+          <Label className="text-xs">Large (≤ ft)</Label>
+          <Input name="threshold_large" type="number" defaultValue="280" />
         </div>
-        <div className="space-y-2">
-          <Label>Complex Roof</Label>
-          <Input name="complex_roof_multiplier" type="number" step="0.01" required defaultValue="1.25" />
+      </div>
+
+      <h4 className="font-semibold text-sm pt-2">Complexity Band Thresholds (Points)</h4>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="space-y-1">
+          <Label className="text-xs">Low (&lt; pts)</Label>
+          <Input name="band_low" type="number" defaultValue="20" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Moderate (&lt; pts)</Label>
+          <Input name="band_moderate" type="number" defaultValue="45" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">High (&lt; pts)</Label>
+          <Input name="band_high" type="number" defaultValue="75" />
         </div>
       </div>
 

@@ -27,6 +27,19 @@ export interface QuoteStore {
     expertConfirmedFeet?: number;
     totalSuppliedKitFeet?: number;
     excessKitFeet?: number;
+    footageMethod?: string;
+    footageStatus?: 'preliminary' | 'supported' | 'partially_supported' | 'customer_provided' | 'expert_confirmed' | 'unable_to_calculate';
+    purchasingAllowancePercent?: number;
+    jobSize?: 'Small' | 'Medium' | 'Large' | 'Extra Large';
+    complexityScore?: number;
+    complexityBand?: 'Low' | 'Moderate' | 'High' | 'Extreme';
+    pricingTierCode?: string;
+    pricingTierName?: string;
+    installationPriceMin?: number;
+    installationPriceMax?: number;
+    installationPricingModelVersion?: string;
+    requiresExpertReview?: boolean;
+    reviewReasons?: string[];
     priceRange: { min: number; max: number };
     recommendedKits: ProductRecommendation[];
     adjustments: PriceAdjustment[];
@@ -76,10 +89,22 @@ const initialQuoteState: QuoteData = {
   projectedUnsupportedFeet: null,
   customerProvidedFeet: null,
   expertConfirmedFeet: null,
+  purchasingAllowancePercent: null,
   totalSuppliedKitFeet: null,
   excessKitFeet: null,
   estimationModelVersion: null,
   measurementSections: [],
+  
+  jobSize: null,
+  complexityScore: null,
+  complexityBand: null,
+  pricingTierCode: null,
+  pricingTierName: null,
+  installationPriceMin: null,
+  installationPriceMax: null,
+  installationPricingModelVersion: null,
+  requiresExpertReview: false,
+  reviewReasons: [],
   
   uploadedPhotos: [],
   uploadedPlans: [],
@@ -166,6 +191,19 @@ export const useQuoteStore = create<QuoteStore>()(
           expertConfirmedFeet: result.expertConfirmedFeet ?? null,
           totalSuppliedKitFeet: result.totalSuppliedKitFeet ?? result.recommendedKits.reduce((sum, kit) => sum + kit.lengthFeet * kit.quantity, 0),
           excessKitFeet: result.excessKitFeet ?? Math.max(0, result.recommendedKits.reduce((sum, kit) => sum + kit.lengthFeet * kit.quantity, 0) - result.recommendedPurchasingFeet),
+          footageMethod: result.footageMethod ?? state.quote.footageMethod,
+          footageStatus: result.footageStatus ?? state.quote.footageStatus,
+          purchasingAllowancePercent: result.purchasingAllowancePercent ?? state.quote.purchasingAllowancePercent,
+          jobSize: result.jobSize ?? state.quote.jobSize,
+          complexityScore: result.complexityScore ?? state.quote.complexityScore,
+          complexityBand: result.complexityBand ?? state.quote.complexityBand,
+          pricingTierCode: result.pricingTierCode ?? state.quote.pricingTierCode,
+          pricingTierName: result.pricingTierName ?? state.quote.pricingTierName,
+          installationPriceMin: result.installationPriceMin ?? result.priceRange.min,
+          installationPriceMax: result.installationPriceMax ?? result.priceRange.max,
+          installationPricingModelVersion: result.installationPricingModelVersion ?? state.quote.installationPricingModelVersion,
+          requiresExpertReview: result.requiresExpertReview ?? state.quote.requiresExpertReview,
+          reviewReasons: result.reviewReasons ?? state.quote.reviewReasons,
           priceRange: result.priceRange,
           recommendedKits: result.recommendedKits,
           adjustments: result.adjustments,
