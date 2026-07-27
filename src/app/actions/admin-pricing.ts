@@ -25,21 +25,20 @@ export async function createPricingConfiguration(formData: FormData) {
 
   const payload = {
     version,
-    base_labor_price_per_foot: Number(formData.get("base_labor_price_per_foot") || 0),
-    minimum_installation_charge: Number(formData.get("minimum_installation_charge") || 0),
-    two_story_multiplier: Number(formData.get("two_story_multiplier") || 1),
-    three_story_multiplier: Number(formData.get("three_story_multiplier") || 1),
-    complex_roof_multiplier: Number(formData.get("complex_roof_multiplier") || 1),
-    moderate_roof_multiplier: Number(formData.get("moderate_roof_multiplier") || 1),
-    peak_charge: Number(formData.get("peak_charge") || 0),
-    difficult_access_charge: Number(formData.get("difficult_access_charge") || 0),
-    accessory_charge: Number(formData.get("accessory_charge") || 0),
-    travel_adjustment: Number(formData.get("travel_adjustment") || 0),
-    regional_adjustment: Number(formData.get("regional_adjustment") || 0),
-    purchasing_allowance_percent: Number(formData.get("purchasing_allowance_percent") || 10),
-    estimate_uncertainty_percent: Number(formData.get("estimate_uncertainty_percent") || 5),
+    purchasing_allowance_percent: Number(formData.get("purchasing_allowance_percent") || 15),
+    estimate_uncertainty_percent: Number(formData.get("estimate_uncertainty_percent") || 10),
+    minimum_installation_charge: Number(formData.get("minimum_installation_charge") || 650),
     tax_rate: Number(formData.get("tax_rate") || 0),
-    jump_extension_fee: Number(formData.get("jump_extension_fee") || 0),
+    job_size_thresholds: {
+      small: Number(formData.get("threshold_small") || 100),
+      medium: Number(formData.get("threshold_medium") || 180),
+      large: Number(formData.get("threshold_large") || 280),
+    },
+    complexity_bands: {
+      low: Number(formData.get("band_low") || 20),
+      moderate: Number(formData.get("band_moderate") || 45),
+      high: Number(formData.get("band_high") || 75),
+    },
   };
 
   const { error } = await supabase.from("pricing_configurations").insert(payload);

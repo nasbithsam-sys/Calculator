@@ -13,8 +13,22 @@ export interface PropertyDetails {
   lng?: number;
   placeId?: string;
   propertyType?: 'single-family' | 'townhouse' | 'commercial' | 'other';
+  propertyCategory?: string;
   stories?: 1 | 2 | 3 | '4+';
   roofComplexity?: 'simple' | 'average' | 'complex' | 'custom';
+  coverageType?: string;
+  rooflineType?: string;
+  gableCount?: number;
+  archCount?: number;
+  hasDormers?: boolean;
+  hasPorch?: boolean;
+  hasBalcony?: boolean;
+  hasMultipleRoofLevels?: boolean;
+  hasDetachedGarage?: boolean;
+  hasMultipleStructures?: boolean;
+  hasHiddenSections?: boolean;
+  hasDifficultCorners?: boolean;
+  accessDifficulty?: 'standard' | 'moderate' | 'steep_slope' | 'high_scaffold' | 'extreme';
 }
 
 export interface CustomerContact {
@@ -79,6 +93,9 @@ export interface QuoteData {
   property: PropertyDetails;
   areas: InstallationAreas;
   
+  // Lights & Material Requirements
+  footageMethod?: string | null;
+  footageStatus?: 'preliminary' | 'supported' | 'partially_supported' | 'customer_provided' | 'expert_confirmed' | 'unable_to_calculate' | null;
   estimatedLinearFeet: number | null;
   supportedInstallationFeet: number | null;
   estimatedInstallationFeetMin: number | null;
@@ -89,6 +106,7 @@ export interface QuoteData {
   projectedUnsupportedFeet: number | null;
   customerProvidedFeet: number | null;
   expertConfirmedFeet: number | null;
+  purchasingAllowancePercent: number | null;
   totalSuppliedKitFeet: number | null;
   excessKitFeet: number | null;
   estimationModelVersion: string | null;
@@ -104,6 +122,18 @@ export interface QuoteData {
   uploadedPhotos: FileMetadata[];
   uploadedPlans: FileMetadata[];
   uploadedVideos: FileMetadata[];
+  
+  // Installation Pricing Tier & Complexity
+  jobSize?: 'Small' | 'Medium' | 'Large' | 'Extra Large' | null;
+  complexityScore?: number | null;
+  complexityBand?: 'Low' | 'Moderate' | 'High' | 'Extreme' | null;
+  pricingTierCode?: string | null;
+  pricingTierName?: string | null;
+  installationPriceMin?: number | null;
+  installationPriceMax?: number | null;
+  installationPricingModelVersion?: string | null;
+  requiresExpertReview?: boolean;
+  reviewReasons?: string[];
   
   priceRange: {
     min: number;
