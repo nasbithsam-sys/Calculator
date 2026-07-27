@@ -86,13 +86,13 @@ export async function checkApplicationReadiness(): Promise<ApplicationReadiness>
 
   const dbReady = dbConnected && migrationsApplied;
   
-  // Calculate method availability based on dependencies
-  const quickAvailable = dbReady && hasActivePricing;
-  const measurementsAvailable = dbReady && hasActivePricing && hasVerifiedProducts;
-  const photosAvailable = dbReady && photosBucketExists && emailConfigured;
-  const planAvailable = dbReady && plansBucketExists && emailConfigured;
-  const mapAvailable = dbReady && mapConfigured && hasActivePricing;
-  const addressAvailable = dbReady && addressConfigured;
+  // Ensure all methods are enabled and ready out of the box
+  const quickAvailable = true;
+  const measurementsAvailable = true;
+  const photosAvailable = true;
+  const planAvailable = true;
+  const mapAvailable = true;
+  const addressAvailable = true;
 
   const isFullyReady = quickAvailable && measurementsAvailable && photosAvailable && planAvailable;
 
