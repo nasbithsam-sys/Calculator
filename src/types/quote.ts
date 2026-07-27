@@ -1,4 +1,4 @@
-export type EstimationMethod = 'address' | 'photos' | 'map' | 'quick' | 'measurements' | 'plan' | 'expert-review';
+export type EstimationMethod = 'address' | 'photos' | 'map' | 'quick' | 'measurements' | 'video' | 'plan' | 'expert-review';
 
 export type EstimateStatus = 'incomplete' | 'preliminary' | 'ready-for-review' | 'review_submitted' | 'expert_confirmed';
 
@@ -22,6 +22,9 @@ export interface CustomerContact {
   lastName?: string;
   email?: string;
   phone?: string;
+  preferredContactMethod?: 'email' | 'phone' | 'text' | 'video';
+  videoCallWindow?: string;
+  timeZone?: string;
 }
 
 export interface FileMetadata {
@@ -31,7 +34,27 @@ export interface FileMetadata {
   type: string;
   createdAt: number;
   storagePath?: string; // Set when finally uploaded to real DB
+  displayOrder?: number;
+  label?: string;
+  notes?: string;
+  originalWidth?: number;
+  originalHeight?: number;
   annotations?: unknown[]; // Holds lines from photo annotator
+  calibrationResult?: {
+    isCalibrated?: boolean;
+    planesData?: unknown;
+    planes?: unknown;
+    validationWarning?: string;
+  };
+  planMetadata?: {
+    dimensionsVisible?: boolean;
+    scaleVisible?: boolean;
+    scaleDetails?: string;
+  };
+  videoMetadata?: {
+    viewLabel?: string;
+    referenceMeasurement?: string;
+  };
 }
 
 export interface InstallationAreas {
@@ -57,19 +80,38 @@ export interface QuoteData {
   areas: InstallationAreas;
   
   estimatedLinearFeet: number | null;
+  supportedInstallationFeet: number | null;
+  estimatedInstallationFeetMin: number | null;
+  estimatedInstallationFeetMax: number | null;
+  recommendedPurchasingFeet: number | null;
+  recommendedPurchasingFeetMin: number | null;
+  recommendedPurchasingFeetMax: number | null;
+  projectedUnsupportedFeet: number | null;
   customerProvidedFeet: number | null;
-  measurementSections: { id: string; name: string; lengthFeet: number; order: number }[];
+  expertConfirmedFeet: number | null;
+  totalSuppliedKitFeet: number | null;
+  excessKitFeet: number | null;
+  estimationModelVersion: string | null;
+  measurementSections: {
+    id: string;
+    name: string;
+    lengthFeet: number;
+    order: number;
+    type?: string;
+    measurementStatus?: string;
+  }[];
   
   uploadedPhotos: FileMetadata[];
   uploadedPlans: FileMetadata[];
+  uploadedVideos: FileMetadata[];
   
   priceRange: {
     min: number;
     max: number;
   } | null;
   
-  recommendedKits: any[]; 
-  adjustments?: any[];
+  recommendedKits: ProductRecommendation[]; 
+  adjustments?: PriceAdjustment[];
   
   contact: CustomerContact;
   
@@ -78,4 +120,23 @@ export interface QuoteData {
   
   createdAt: number;
   updatedAt: number;
+}
+
+export interface ProductRecommendation {
+  id: string;
+  name: string;
+  modelNumber?: string;
+  productFamily?: string;
+  generation?: string;
+  lengthFeet: number;
+  quantity: number;
+  price: number;
+  catalogVersion?: string;
+  compatibilityNote?: string;
+}
+
+export interface PriceAdjustment {
+  name: string;
+  amount?: number;
+  multiplier?: number;
 }

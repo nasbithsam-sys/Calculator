@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useQuoteStore } from '@/store/quoteStore';
 import { calculateEstimate } from '@/app/actions/calculate';
-import { ChevronLeft, Plus, Trash2, GripVertical, Loader2, AlertCircle, PlusCircle, Calculator } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2, Loader2, AlertCircle, PlusCircle, Calculator } from 'lucide-react';
 import Link from 'next/link';
 
 const sectionSchema = z.object({
@@ -32,6 +32,8 @@ const measurementsSchema = z.object({
   sections: z.array(sectionSchema).min(1, "Please add at least one section to calculate an estimate."),
 });
 
+import { createClient } from '@/utils/supabase/client';
+
 const COMMON_NAMES = ['Front Eave', 'Garage', 'Porch', 'Lower Peak', 'Upper Peak', 'Left Side', 'Right Side', 'Rear'];
 
 export default function MeasurementsPage() {
@@ -40,15 +42,31 @@ export default function MeasurementsPage() {
   const [isClient, setIsClient] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [allowancePercent, setAllowancePercent] = useState<number>(15);
+  const supabase = createClient();
 
   useEffect(() => {
-    setIsClient(true);
+    const timeout = window.setTimeout(() => setIsClient(true), 0);
     setMethod('measurements');
-  }, [setMethod]);
+    
+    async function fetchConfig() {
+      const { data } = await supabase
+        .from('pricing_configurations')
+        .select('purchasing_allowance_percent')
+        .eq('active', true)
+        .single();
+        
+      if (data?.purchasing_allowance_percent) {
+        setAllowancePercent(data.purchasing_allowance_percent);
+      }
+    }
+    fetchConfig();
+    return () => window.clearTimeout(timeout);
+  }, [setMethod, supabase]);
 
   const defaultSections = quote.measurementSections?.length > 0 
     ? quote.measurementSections.map(s => ({ ...s, lengthFeet: String(s.lengthFeet) }))
-    : [{ id: Math.random().toString(), name: 'Front Eave', lengthFeet: quote.customerProvidedFeet ? String(quote.customerProvidedFeet) : '' }];
+    : [{ id: crypto.randomUUID(), name: 'Front Eave', lengthFeet: quote.customerProvidedFeet ? String(quote.customerProvidedFeet) : '' }];
 
   const form = useForm<z.infer<typeof measurementsSchema>>({
     resolver: zodResolver(measurementsSchema),
@@ -63,12 +81,12 @@ export default function MeasurementsPage() {
     name: "sections"
   });
 
-  const watchedSections = form.watch("sections");
+  const watchedSections = useWatch({ control: form.control, name: "sections" });
   const currentTotal = watchedSections.reduce((sum, sec) => sum + (Number(sec.lengthFeet) || 0), 0);
-  const estimatedPurchasing = Math.ceil(currentTotal * 1.15); // Simple visual hint of 15% overage
+  const estimatedPurchasing = Math.ceil(currentTotal * (1 + (allowancePercent / 100)));
 
   const addCommonSection = (name: string) => {
-    append({ id: Math.random().toString(), name, lengthFeet: '' });
+    append({ id: crypto.randomUUID(), name, lengthFeet: '' });
   };
 
   const onSubmit = async (data: z.infer<typeof measurementsSchema>) => {
@@ -100,11 +118,11 @@ export default function MeasurementsPage() {
       setMeasurementSections(sectionsToSave);
       setFeet(totalFeet, 'customer');
       setFeet(result.estimatedLinearFeet, 'estimated');
-      setCalculationResult(result as any);
+      setCalculationResult(result);
       setStatus('ready-for-review', 'high'); 
 
       router.push('/estimate/result');
-    } catch (e) {
+    } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsCalculating(false);
@@ -169,8 +187,13 @@ export default function MeasurementsPage() {
                 
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-4 hover:bg-slate-50 transition-colors rounded-xl group relative">
-                    <div className="hidden sm:flex flex-col items-center justify-center cursor-move text-slate-300 hover:text-primary active:cursor-grabbing px-1">
-                      <GripVertical className="w-5 h-5" onClick={() => index > 0 && move(index, index - 1)} />
+                    <div className="hidden sm:flex flex-col items-center justify-center text-slate-300 px-1 space-y-1">
+                      <button type="button" onClick={() => index > 0 && move(index, index - 1)} className="hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed" disabled={index === 0}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                      </button>
+                      <button type="button" onClick={() => index < fields.length - 1 && move(index, index + 1)} className="hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed" disabled={index === fields.length - 1}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                      </button>
                     </div>
 
                     <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-12 gap-4">
@@ -196,7 +219,7 @@ export default function MeasurementsPage() {
                             <FormLabel className="sm:hidden text-xs font-bold text-slate-500 uppercase tracking-wider">Length</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Input placeholder="0" type="number" {...field} className="font-bold text-lg pr-10 text-right bg-white shadow-sm border-slate-300 focus-visible:ring-primary h-12" />
+                                <Input placeholder="0" type="number" step="any" {...field} className="font-bold text-lg pr-10 text-right bg-white shadow-sm border-slate-300 focus-visible:ring-primary h-12" />
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold select-none pointer-events-none">
                                   ft
                                 </div>
@@ -219,7 +242,7 @@ export default function MeasurementsPage() {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => append({ id: Math.random().toString(), name: '', lengthFeet: '' })}
+                  onClick={() => append({ id: crypto.randomUUID(), name: '', lengthFeet: '' })}
                   className="w-full border-dashed border-2 bg-transparent hover:border-primary hover:bg-primary/5 hover:text-primary transition-colors font-bold py-6"
                 >
                   <Plus className="w-5 h-5 mr-2" /> Add Custom Section
@@ -248,7 +271,7 @@ export default function MeasurementsPage() {
                 <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-sm">
                   <span className="font-bold text-amber-900 block mb-1">Purchasing Footage (~{estimatedPurchasing} ft)</span>
-                  <span className="text-amber-800">We automatically add a ~15% allowance to ensure installers have enough cut segments to navigate peaks and jumps.</span>
+                  <span className="text-amber-800">We automatically add a ~{allowancePercent}% allowance to ensure installers have enough cut segments to navigate peaks and jumps.</span>
                 </div>
               </div>
 

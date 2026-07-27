@@ -32,6 +32,7 @@ export async function searchAddress(query: string): Promise<AddressSuggestion[]>
 }
 
 export async function geocodeAddress(id: string): Promise<GeocodedAddress | null> {
+  void id;
   if (!env.NEXT_PUBLIC_MAPBOX_TOKEN) {
     // Mock behavior while pending credentials
     return {

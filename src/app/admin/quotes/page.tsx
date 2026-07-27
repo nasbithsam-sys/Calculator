@@ -1,11 +1,27 @@
-import { createClient } from "@/utils/supabase/server"
+import { requireAdmin } from "@/lib/admin"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
+interface ReviewQueueRow {
+  id: string;
+  status: string;
+  created_at: string;
+  quotes?: {
+    id?: string;
+    reference_number?: string;
+    estimated_price_min?: number | null;
+    estimated_price_max?: number | null;
+    customers?: {
+      name?: string | null;
+      email?: string | null;
+    } | null;
+  } | null;
+}
+
 export default async function AdminQuotesPage() {
-  const supabase = await createClient()
+  const { supabase } = await requireAdmin()
 
   // Fetch all expert reviews joined with quotes and customers
   const { data: reviews, error } = await supabase
@@ -52,7 +68,7 @@ export default async function AdminQuotesPage() {
                 </tr>
               </thead>
               <tbody>
-                {reviews?.map((review: any) => (
+                {(reviews as ReviewQueueRow[] | null)?.map((review) => (
                   <tr key={review.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-6 py-4 font-medium text-slate-900">
                       {review.quotes?.reference_number}

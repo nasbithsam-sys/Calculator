@@ -89,17 +89,24 @@ export default function EstimateClient({ readiness }: { readiness: ApplicationRe
       </section>
 
       {/* 6. Compact Additional Methods */}
-      <section className="max-w-4xl mx-auto pt-8 border-t border-border">
+      <section className="max-w-6xl mx-auto pt-8 border-t border-border">
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 text-center mb-6">
           More ways to get an estimate
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <SecondaryMethodCard 
             href="/estimate/measurements"
             icon={<Ruler className="w-5 h-5 text-slate-600" />}
             title="I Know My Measurements"
             available={methods.measurementsAvailable}
             reason="Requires pricing and verified products."
+          />
+          <SecondaryMethodCard 
+            href="/estimate/video"
+            icon={<Clock className="w-5 h-5 text-slate-600" />}
+            title="Guided Video Walkaround"
+            available={methods.photosAvailable} // Video shares the same email/storage dependencies as photos
+            reason="Requires storage bucket and email provider setup."
           />
           <SecondaryMethodCard 
             href="/estimate/plan"

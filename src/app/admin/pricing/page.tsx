@@ -1,11 +1,18 @@
-import { getPricingConfigurations, createPricingConfiguration, activatePricingConfiguration } from "@/app/actions/admin-pricing";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { getPricingConfigurations, activatePricingConfiguration } from "@/app/actions/admin-pricing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PricingForm } from "./PricingForm";
 
+interface PricingConfigurationRow {
+  id: string;
+  version: string;
+  base_labor_price_per_foot: number;
+  minimum_installation_charge: number;
+  active: boolean;
+}
+
 export default async function PricingConfigPage() {
-  const configs = await getPricingConfigurations();
+  const configs = await getPricingConfigurations() as PricingConfigurationRow[];
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -30,7 +37,7 @@ export default async function PricingConfigPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {configs.map((c: any) => (
+                    {configs.map((c) => (
                       <tr key={c.id} className="border-b border-slate-100">
                         <td className="px-4 py-3 font-medium text-slate-900">{c.version}</td>
                         <td className="px-4 py-3">${c.base_labor_price_per_foot}</td>

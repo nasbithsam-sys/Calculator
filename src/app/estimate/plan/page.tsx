@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useQuoteStore } from '@/store/quoteStore';
@@ -12,12 +13,15 @@ export default function PlanPage() {
   const { setMethod, setStatus, quote, addPlan, removePlan } = useQuoteStore();
   const [isClient, setIsClient] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasDimensions, setHasDimensions] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: '', depth: '' });
 
   const previewsRef = useRef<Record<string, string>>({});
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
     setMethod('plan');
   }, [setMethod]);
@@ -40,7 +44,7 @@ export default function PlanPage() {
       return;
     }
 
-    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+    const id = crypto.randomUUID();
     
     let previewUrl = null;
     if (file.type.startsWith('image/')) {
@@ -66,23 +70,19 @@ export default function PlanPage() {
         throw new Error(errorData.error || 'Upload failed');
       }
 
-      const data = await res.json();
-
-      if (previewUrl) {
-        setPreviews(prev => ({ ...prev, [id]: data.url }));
-        previewsRef.current = { ...previewsRef.current, [id]: data.url };
-      }
+      const data: { path: string } = await res.json();
 
       addPlan({
         id,
         name: file.name,
         size: file.size,
         type: file.type,
+        // eslint-disable-next-line react-hooks/purity
         createdAt: Date.now(),
         storagePath: data.path,
       });
-    } catch (err: any) {
-      setError(err.message || "Failed to upload plan. Please try again.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to upload plan. Please try again.");
       handleRemove(id);
     } finally {
       setIsUploading(false);
@@ -102,14 +102,52 @@ export default function PlanPage() {
     }
   };
 
-  const onContinue = () => {
-    if (quote.uploadedPlans.length === 0) {
-      setError("Please upload at least one plan or drawing.");
-      return;
+  const onContinue = async () => {
+    let totalFeet = 0;
+    if (hasDimensions && dimensions.width && dimensions.depth) {
+      const w = parseFloat(dimensions.width);
+      const d = parseFloat(dimensions.depth);
+      if (!isNaN(w) && !isNaN(d)) {
+        totalFeet = (w + d) * 2;
+      }
     }
-    
-    setStatus('ready-for-review', 'not-calculated');
-    router.push('/estimate/result');
+
+    if (totalFeet > 0) {
+      setIsUploading(true);
+      setError(null);
+      try {
+        const { calculateEstimate } = await import('@/app/actions/calculate');
+        const result = await calculateEstimate({
+          coverage: "photo-measured",
+          stories: quote.property?.stories === '4+' ? 4 : Number(quote.property?.stories || 1),
+          roofComplexity: quote.property?.roofComplexity || "average",
+          peaks: 0,
+          customerProvidedFeet: totalFeet
+        });
+
+        if (!result.success) {
+          setError(result.error || "Calculation failed.");
+          return;
+        }
+
+        useQuoteStore.getState().setFeet(totalFeet, 'customer');
+        useQuoteStore.getState().setFeet(result.estimatedLinearFeet, 'estimated');
+        useQuoteStore.getState().setCalculationResult(result);
+        setStatus('preliminary', 'medium');
+        router.push('/estimate/result');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to calculate.");
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      if (quote.uploadedPlans.length === 0) {
+        setError("Please upload at least one plan, or provide dimensions.");
+        return;
+      }
+      setStatus('ready-for-review', 'not-calculated');
+      router.push('/estimate/expert-review');
+    }
   };
 
   if (!isClient) return null;
@@ -135,10 +173,10 @@ export default function PlanPage() {
         <div className="hidden md:flex items-center gap-3">
           <Button 
             onClick={onContinue} 
-            disabled={quote.uploadedPlans.length === 0 || isUploading}
+            disabled={(!hasDimensions && quote.uploadedPlans.length === 0) || isUploading}
             className="py-6 px-8 text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-md transition-transform active:scale-[0.98]"
           >
-            {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : 'Submit for Review'}
+            {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : (hasDimensions ? 'Calculate Estimate' : 'Submit for Review')}
             {!isUploading && <ArrowRight className="w-5 h-5 ml-2" />}
           </Button>
         </div>
@@ -150,6 +188,52 @@ export default function PlanPage() {
           <div className="text-sm font-bold text-red-800 leading-relaxed">{error}</div>
         </div>
       )}
+
+      <div className="bg-white p-6 sm:p-8 rounded-3xl card-shadow border border-slate-200 mb-8">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Property Dimensions</h2>
+            <p className="text-sm text-slate-500">If you already know the scale and dimensions, we can calculate instantly.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              id="has-dimensions" 
+              checked={hasDimensions} 
+              onChange={(e) => setHasDimensions(e.target.checked)}
+              className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
+            />
+            <label htmlFor="has-dimensions" className="text-sm font-bold text-slate-700 cursor-pointer">
+              I know my dimensions
+            </label>
+          </div>
+        </div>
+
+        {hasDimensions && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Building Width (feet)</label>
+              <input 
+                type="number" 
+                placeholder="e.g. 50" 
+                value={dimensions.width}
+                onChange={(e) => setDimensions({ ...dimensions, width: e.target.value })}
+                className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Building Depth (feet)</label>
+              <input 
+                type="number" 
+                placeholder="e.g. 40" 
+                value={dimensions.depth}
+                onChange={(e) => setDimensions({ ...dimensions, depth: e.target.value })}
+                className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="bg-white p-6 sm:p-8 rounded-3xl card-shadow border border-slate-200">
         
@@ -184,7 +268,14 @@ export default function PlanPage() {
               {quote.uploadedPlans.map((plan) => (
                 <div key={plan.id} className="relative group rounded-2xl overflow-hidden border border-slate-200 aspect-square bg-slate-50 shadow-sm transition-all hover:shadow-md">
                   {previews[plan.id] ? (
-                    <img src={previews[plan.id]} alt={plan.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <Image
+                      src={previews[plan.id]}
+                      alt={plan.name}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-slate-100">
                       <FileText className="w-12 h-12 text-slate-400 mb-3" />
@@ -213,10 +304,10 @@ export default function PlanPage() {
       <div className="md:hidden mt-8 flex flex-col gap-3">
         <Button 
           onClick={onContinue} 
-          disabled={quote.uploadedPlans.length === 0 || isUploading}
+          disabled={(!hasDimensions && quote.uploadedPlans.length === 0) || isUploading}
           className="w-full py-7 text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-md active:scale-[0.98]"
         >
-          {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : 'Submit for Review'}
+          {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : (hasDimensions ? 'Calculate Estimate' : 'Submit for Review')}
           {!isUploading && <ArrowRight className="w-5 h-5 ml-2" />}
         </Button>
       </div>
