@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuoteStore } from '@/store/quoteStore';
 import { Button } from '@/components/ui/button';
-import { recommendKits } from '@/config/products';
 import { AlertCircle, CheckCircle2, ChevronLeft, Info, RefreshCcw, ArrowRight, ShieldCheck, Tag, Zap } from 'lucide-react';
 import Link from 'next/link';
 
@@ -19,6 +18,7 @@ function ResultContent() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
   }, []);
 
@@ -86,8 +86,8 @@ function ResultContent() {
               <li className="flex gap-4">
                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0">2</div>
                 <div>
-                  <h4 className="font-bold text-slate-900">Confirmed Quote</h4>
-                  <p className="text-slate-600 font-medium mt-1">You will receive an email within 24 hours with your exact, guaranteed installation price.</p>
+                  <h4 className="font-bold text-slate-900">Estimator Follow-up</h4>
+                  <p className="text-slate-600 font-medium mt-1">An estimator will review your submission and contact you using your selected method.</p>
                 </div>
               </li>
               <li className="flex gap-4">
@@ -114,7 +114,7 @@ function ResultContent() {
           </div>
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">More Information Needed</h1>
           <p className="text-lg text-slate-600 font-medium max-w-lg mx-auto">
-            We couldn't generate an automatic estimate with the provided details. 
+            We couldn&apos;t generate an automatic estimate with the provided details. 
             Please request a manual review from our experts.
           </p>
           
@@ -158,9 +158,9 @@ function ResultContent() {
                   </div>
                   
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 shrink-0 w-full sm:w-auto text-center sm:text-left">
-                    <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">Total Coverage</div>
+                    <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">Supported Installation</div>
                     <div className="text-4xl font-bold text-white flex items-baseline justify-center sm:justify-start gap-1">
-                      {estimatedLinearFeet} <span className="text-xl text-slate-400">ft</span>
+                      {quote.supportedInstallationFeet ?? estimatedLinearFeet} <span className="text-xl text-slate-400">ft</span>
                     </div>
                   </div>
                 </div>
@@ -171,6 +171,34 @@ function ResultContent() {
                 <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                   <Tag className="w-6 h-6 text-primary" /> Estimate Details
                 </h2>
+
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    ["Supported installation", quote.supportedInstallationFeet ?? estimatedLinearFeet],
+                    ["Recommended purchasing", quote.recommendedPurchasingFeet],
+                    ["Total supplied kits", quote.totalSuppliedKitFeet],
+                    ["Extra supplied", quote.excessKitFeet],
+                  ].map(([label, value]) => (
+                    <div key={label} className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</div>
+                      <div className="text-2xl font-extrabold text-slate-900 mt-1">
+                        {typeof value === "number" ? value : 0} <span className="text-sm text-slate-400">ft</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {quote.projectedUnsupportedFeet ? (
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-bold text-amber-900">Unsupported sections excluded</div>
+                      <p className="text-sm text-amber-800 mt-1">
+                        {quote.projectedUnsupportedFeet} ft was marked unresolved or unsupported and is not included in the automated price range.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
                 {quote.measurementSections && quote.measurementSections.length > 0 && (
                   <div className="space-y-4">
@@ -198,7 +226,7 @@ function ResultContent() {
                             </div>
                             <div>
                               <div className="font-bold text-slate-900">{product.name}</div>
-                              <div className="text-sm font-medium text-slate-500">{product.length_feet}ft Kit</div>
+                              <div className="text-sm font-medium text-slate-500">{product.lengthFeet}ft Kit{product.modelNumber ? ` - ${product.modelNumber}` : ''}</div>
                             </div>
                           </div>
                           <div className="font-bold text-slate-900 text-lg">
@@ -247,7 +275,7 @@ function ResultContent() {
                   </li>
                   <li className="flex items-center gap-3 text-slate-700 font-medium">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    Exact pricing guarantee
+                    Expert-confirmed pricing before installation
                   </li>
                   <li className="flex items-center gap-3 text-slate-700 font-medium">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />

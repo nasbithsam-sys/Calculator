@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useQuoteStore } from '@/store/quoteStore';
 import { ChevronLeft, Image as ImageIcon, Trash2, UploadCloud, Edit3, ArrowRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import PhotoAnnotator, { AnnotationLine } from '@/components/PhotoAnnotator';
+import PhotoAnnotator, { AnnotationLine, Plane } from '@/components/PhotoAnnotator';
 
 export default function PhotosPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function PhotosPage() {
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
     setMethod('photos');
   }, [setMethod]);
@@ -47,7 +49,7 @@ export default function PhotosPage() {
       return;
     }
 
-    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+    const id = crypto.randomUUID();
     
     // Optimistic local preview
     const previewUrl = URL.createObjectURL(file);
@@ -71,22 +73,20 @@ export default function PhotosPage() {
         throw new Error(errorData.error || 'Upload failed');
       }
 
-      const data = await res.json();
-
-      setPreviews(prev => ({ ...prev, [id]: data.url }));
-      previewsRef.current = { ...previewsRef.current, [id]: data.url };
+      const data: { path: string } = await res.json();
 
       addPhoto({
         id,
         name: file.name,
         size: file.size,
         type: file.type,
+        // eslint-disable-next-line react-hooks/purity
         createdAt: Date.now(),
         annotations: [],
         storagePath: data.path,
       });
-    } catch (err: any) {
-      setError(err.message || "Failed to upload photo. Please try again.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to upload photo. Please try again.");
       handleRemove(id);
     } finally {
       setIsUploading(false);
@@ -107,16 +107,23 @@ export default function PhotosPage() {
     if (annotatingPhotoId === id) setAnnotatingPhotoId(null);
   };
 
-  const onSaveAnnotations = (result: any) => {
+  const onSaveAnnotations = (result: {
+    lines: AnnotationLine[];
+    isCalibrated?: boolean;
+    planesData?: unknown;
+    planes?: unknown;
+    validationWarning?: string;
+  }) => {
     if (annotatingPhotoId) {
       updatePhoto(annotatingPhotoId, { 
         annotations: result.lines,
         calibrationResult: {
           isCalibrated: result.isCalibrated,
-          calibrationRatio: result.calibrationRatio,
+          planesData: result.planesData,
+          planes: result.planes,
           validationWarning: result.validationWarning
         }
-      } as any);
+      });
     }
     setAnnotatingPhotoId(null);
   };
@@ -132,15 +139,24 @@ export default function PhotosPage() {
     let hasTargets = false;
 
     for (const photo of quote.uploadedPhotos) {
-      const p = photo as any;
-      const targets = p.annotations?.filter((l: any) => l.type === 'target') || [];
+      const p = photo as typeof photo & {
+        calibrationResult?: { planesData?: Record<string, { isValid?: boolean; calibrationRatio?: number }> };
+      };
+      const targets = (p.annotations as AnnotationLine[] | undefined)?.filter((line) => line.type === 'target') || [];
+      const planesData = p.calibrationResult?.planesData || {};
+
       if (targets.length > 0) {
         hasTargets = true;
-        if (!p.calibrationResult?.isCalibrated) {
+        const invalidTargets = targets.filter((target) => !planesData[target.planeId]?.isValid);
+        
+        if (invalidTargets.length > 0) {
           allCalibrated = false;
         } else {
-          targets.forEach((t: any) => {
-            totalTargetLengthFeet += t.pixels / p.calibrationResult.calibrationRatio;
+          targets.forEach((target) => {
+            const ratio = planesData[target.planeId]?.calibrationRatio;
+            if (ratio) {
+              if (target.pixels) totalTargetLengthFeet += target.pixels / ratio;
+            }
           });
         }
       }
@@ -167,11 +183,11 @@ export default function PhotosPage() {
         setFeet(totalTargetLengthFeet, 'customer');
         setFeet(result.estimatedLinearFeet, 'estimated');
         
-        useQuoteStore.getState().setCalculationResult(result as any);
+        useQuoteStore.getState().setCalculationResult(result);
         setStatus('preliminary', 'medium');
         router.push('/estimate/result');
-      } catch (err: any) {
-        setError(err.message || "Failed to calculate.");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to calculate.");
       } finally {
         setIsUploading(false);
       }
@@ -225,6 +241,7 @@ export default function PhotosPage() {
           <PhotoAnnotator 
             imageUrl={previews[annotatingPhotoId]}
             initialLines={(quote.uploadedPhotos.find(p => p.id === annotatingPhotoId)?.annotations as AnnotationLine[]) || []}
+            initialPlanes={((quote.uploadedPhotos.find(p => p.id === annotatingPhotoId) as typeof quote.uploadedPhotos[number] & { calibrationResult?: { planes?: Plane[] } } | undefined)?.calibrationResult?.planes) || []}
             onSave={onSaveAnnotations}
             onCancel={() => setAnnotatingPhotoId(null)}
           />
@@ -261,13 +278,20 @@ export default function PhotosPage() {
               
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {quote.uploadedPhotos.map((photo) => {
-                  const p = photo as any;
+                  const p = photo as typeof photo & { calibrationResult?: { isCalibrated?: boolean } };
                   const isCalibrated = p.calibrationResult?.isCalibrated;
                   
                   return (
                     <div key={photo.id} className="relative group rounded-2xl overflow-hidden border border-slate-200 aspect-square bg-slate-100 shadow-sm transition-all hover:shadow-md">
                       {previews[photo.id] ? (
-                        <img src={previews[photo.id]} alt={photo.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <Image
+                          src={previews[photo.id]}
+                          alt={photo.name}
+                          fill
+                          unoptimized
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center p-4">
                           <Loader2 className="w-8 h-8 text-slate-400 animate-spin mb-2" />

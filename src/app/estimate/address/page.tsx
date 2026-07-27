@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useQuoteStore } from '@/store/quoteStore';
-import { ChevronLeft, MapPin, CheckCircle2, ArrowRight } from 'lucide-react';
+import { ChevronLeft, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 
@@ -12,29 +12,12 @@ export default function AddressPage() {
   const router = useRouter();
   const { setMethod, updateProperty, quote } = useQuoteStore();
   const [isClient, setIsClient] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<any>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
     setMethod('address');
   }, [setMethod]);
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPlace) return;
-
-    updateProperty({
-      address: selectedPlace.address,
-      zipCode: selectedPlace.zipCode,
-      city: selectedPlace.city,
-      state: selectedPlace.state,
-      lat: selectedPlace.lat,
-      lng: selectedPlace.lng,
-      placeId: selectedPlace.placeId,
-    });
-    
-    router.push('/estimate/map');
-  };
 
   if (!isClient) return null;
 
@@ -70,52 +53,29 @@ export default function AddressPage() {
           <h2 className="text-2xl font-bold text-slate-900">Property Address</h2>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-8">
-          {!selectedPlace ? (
-            <div className="space-y-4 animate-in fade-in duration-500">
-              <label className="text-lg font-bold text-slate-900 block">Enter your US address</label>
-              <AddressAutocomplete 
-                onPlaceSelected={(place) => setSelectedPlace(place)}
-                defaultValue={quote.property?.address || ''}
-              />
-              <p className="text-sm font-medium text-slate-500 pt-2">
-                We use Google Maps to load the most up-to-date satellite view of your roof.
-              </p>
-            </div>
-          ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-blue-50/50 border-2 border-blue-100 rounded-2xl p-6 relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl -mr-16 -mt-16 opacity-60 pointer-events-none" />
-                
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="bg-emerald-500 p-1.5 rounded-full text-white shadow-sm">
-                      <CheckCircle2 className="w-5 h-5" />
-                    </div>
-                    <h3 className="font-extrabold text-slate-900 text-xl">Address Found</h3>
-                  </div>
-                  
-                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-6">
-                    <div className="font-bold text-slate-900 text-xl mb-1">{selectedPlace.address}</div>
-                    <div className="text-slate-600 font-medium">
-                      {selectedPlace.city}, {selectedPlace.state} {selectedPlace.zipCode}
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button type="button" variant="outline" onClick={() => setSelectedPlace(null)} className="w-full sm:w-auto bg-white hover:bg-slate-50 border-slate-200 text-slate-700 font-bold py-6 px-6 rounded-xl">
-                      Change Address
-                    </Button>
-                    <Button type="submit" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-bold py-6 shadow-md transition-transform active:scale-[0.98] flex-1 rounded-xl">
-                      Confirm Address
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </form>
+        <div className="space-y-8">
+          <div className="space-y-4 animate-in fade-in duration-500">
+            <label className="text-lg font-bold text-slate-900 block">Enter your US address</label>
+            <AddressAutocomplete 
+              onPlaceSelected={(place) => {
+                updateProperty({
+                  address: place.address,
+                  zipCode: place.zipCode,
+                  city: place.city,
+                  state: place.state,
+                  lat: place.lat,
+                  lng: place.lng,
+                  placeId: place.placeId,
+                });
+                router.push('/estimate/map');
+              }}
+              defaultValue={quote.property?.address || ''}
+            />
+            <p className="text-sm font-medium text-slate-500 pt-2">
+              Your address locates the property. You will confirm the roofline sections on the next step. We use Google Maps to load the most up-to-date satellite view of your roof.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

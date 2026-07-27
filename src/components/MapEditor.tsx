@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { env } from '@/lib/env';
-import { Trash2, RotateCcw, PenTool, CheckCircle2, ChevronRight, Calculator, AlertCircle, X, Trash } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { PenTool, CheckCircle2, RotateCcw, X, AlertCircle, Calculator, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 
 export interface MapSection {
   id: string;
@@ -27,25 +27,29 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
   
   const [history, setHistory] = useState<google.maps.LatLngLiteral[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
 
   const polylineRefs = useRef<Record<string, google.maps.Polyline>>({});
+  
+  const { isLoaded, error: scriptError } = useGoogleMaps();
+
+  const updateSectionPath = useCallback((id: string, newPath: google.maps.LatLngLiteral[]) => {
+    setSections(prev => prev.map(s => {
+      if (s.id === id) {
+        let lengthMeters = 0;
+        if (newPath.length > 1 && window.google?.maps?.geometry) {
+          lengthMeters = window.google.maps.geometry.spherical.computeLength(newPath);
+        }
+        const feet = lengthMeters * 3.28084;
+        return { ...s, path: newPath, lengthFeet: feet, geodesicLengthFeet: feet };
+      }
+      return s;
+    }));
+  }, []);
 
   useEffect(() => {
-    if (!window.google && !document.getElementById('google-maps-script')) {
-      const script = document.createElement('script');
-      script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY}&libraries=geometry&v=weekly`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      
-      script.onload = initMap;
-    } else if (window.google) {
-      initMap();
-    }
-
-    function initMap() {
-      if (!mapRef.current) return;
+    if (isLoaded && !map) {
+      if (!mapRef.current || !window.google) return;
       const m = new window.google.maps.Map(mapRef.current, {
         center: initialCenter,
         zoom: 20,
@@ -59,7 +63,7 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
       });
       setMap(m);
     }
-  }, [initialCenter]);
+  }, [initialCenter, isLoaded, map]);
 
   useEffect(() => {
     if (!map) return;
@@ -115,23 +119,9 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
     });
 
     onSectionsChange(sections);
-  }, [sections, activeSectionId, map]);
+  }, [sections, activeSectionId, map, onSectionsChange, updateSectionPath]);
 
-  const updateSectionPath = (id: string, newPath: google.maps.LatLngLiteral[]) => {
-    setSections(prev => prev.map(s => {
-      if (s.id === id) {
-        let lengthMeters = 0;
-        if (newPath.length > 1 && window.google?.maps?.geometry) {
-          lengthMeters = window.google.maps.geometry.spherical.computeLength(newPath);
-        }
-        const feet = lengthMeters * 3.28084;
-        return { ...s, path: newPath, lengthFeet: feet, geodesicLengthFeet: feet };
-      }
-      return s;
-    }));
-  };
-
-  const handleMapClick = (e: google.maps.MapMouseEvent) => {
+  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     if (!activeSectionId || !e.latLng) return;
     
     setSections(prev => prev.map(s => {
@@ -152,17 +142,17 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
       }
       return s;
     }));
-  };
+  }, [activeSectionId, history, historyIndex]);
 
   useEffect(() => {
     if (map) {
       const listener = map.addListener('click', handleMapClick);
       return () => google.maps.event.removeListener(listener);
     }
-  }, [map, activeSectionId, history, historyIndex]);
+  }, [handleMapClick, map]);
 
   const startNewSection = () => {
-    const id = Math.random().toString();
+    const id = crypto.randomUUID();
     setSections(prev => [...prev, {
       id,
       name: `Section ${prev.length + 1}`,
@@ -211,12 +201,11 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
   };
 
   const clearAll = () => {
-    if (confirm("Are you sure you want to clear all drawn sections?")) {
-      setSections([]);
-      setActiveSectionId(null);
-      setHistory([]);
-      setHistoryIndex(-1);
-    }
+    setSections([]);
+    setActiveSectionId(null);
+    setHistory([]);
+    setHistoryIndex(-1);
+    setIsConfirmingClear(false);
   };
 
   const recenter = () => { if (map) map.setCenter(initialCenter); };
@@ -237,7 +226,7 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
                 <PenTool className="w-5 h-5 mr-2" /> Start Drawing
               </Button>
               {sections.length > 0 && (
-                <Button onClick={clearAll} variant="outline" className="bg-white/95 backdrop-blur font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-12 rounded-xl shadow-sm">
+                <Button onClick={() => setIsConfirmingClear(true)} variant="outline" className="bg-white/95 backdrop-blur font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-12 rounded-xl shadow-sm">
                   <Trash className="w-5 h-5 mr-2" /> Clear All
                 </Button>
               )}
@@ -251,6 +240,9 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
               <div className="flex gap-2 w-full sm:w-auto">
                 <Button onClick={undo} disabled={historyIndex < 0} variant="outline" className="flex-1 sm:flex-none h-10 border-slate-200 bg-white">
                   <RotateCcw className="w-4 h-4 mr-2" /> Undo
+                </Button>
+                <Button onClick={redo} disabled={historyIndex >= history.length - 1} variant="outline" className="flex-1 sm:flex-none h-10 border-slate-200 bg-white">
+                  Redo
                 </Button>
                 <Button onClick={finishSection} className="flex-1 sm:flex-none h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
                   <CheckCircle2 className="w-4 h-4 mr-2" /> Finish
@@ -267,6 +259,27 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
         </div>
 
         <div ref={mapRef} className="w-full h-full cursor-crosshair" />
+        {scriptError && (
+          <div className="absolute inset-0 z-20 bg-white/95 flex items-center justify-center p-6 text-center">
+            <div className="max-w-sm">
+              <AlertCircle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+              <p className="font-bold text-slate-900">Map could not load</p>
+              <p className="text-sm text-slate-600 mt-2">{scriptError.message}</p>
+            </div>
+          </div>
+        )}
+        {isConfirmingClear && (
+          <div className="absolute inset-0 z-30 bg-slate-950/40 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200 max-w-sm w-full">
+              <h4 className="font-extrabold text-slate-900 text-lg">Clear drawn sections?</h4>
+              <p className="text-sm text-slate-600 mt-2">This removes all roofline sections from the map.</p>
+              <div className="flex gap-3 mt-6">
+                <Button variant="outline" className="flex-1" onClick={() => setIsConfirmingClear(false)}>Cancel</Button>
+                <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white" onClick={clearAll}>Clear</Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* SIDEBAR (Right/Bottom) */}
@@ -289,7 +302,7 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
             <div className="flex flex-col items-center justify-center h-full text-center p-6 opacity-60">
               <Calculator className="w-12 h-12 text-slate-300 mb-3" />
               <p className="font-bold text-slate-500">No sections drawn yet.</p>
-              <p className="text-sm text-slate-400 mt-1">Click "Start Drawing" to measure your home.</p>
+              <p className="text-sm text-slate-400 mt-1">Click &quot;Start Drawing&quot; to measure your home.</p>
             </div>
           ) : (
             sections.map(sec => {
@@ -311,7 +324,7 @@ export function MapEditor({ initialCenter, onSectionsChange }: MapEditorProps) {
                   
                   <select 
                     value={sec.type}
-                    onChange={(e) => updateSectionType(sec.id, e.target.value as any)}
+                    onChange={(e) => updateSectionType(sec.id, e.target.value as MapSection['type'])}
                     className="w-full text-sm font-semibold text-slate-700 bg-slate-100/50 p-2.5 border border-slate-200 rounded-lg mb-4 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer appearance-none"
                   >
                     <option value="horizontal_eave">Horizontal Eave</option>

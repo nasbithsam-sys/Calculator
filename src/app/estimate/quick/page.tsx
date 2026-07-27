@@ -40,6 +40,7 @@ export default function QuickEstimatePage() {
   const [step, setStep] = useState(1);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
     setMethod('quick');
   }, [setMethod]);
@@ -98,11 +99,11 @@ export default function QuickEstimatePage() {
       }
       
       setFeet(result.estimatedLinearFeet, 'estimated');
-      setCalculationResult(result as any);
+      setCalculationResult(result);
       setStatus('preliminary', 'low');
 
       router.push('/estimate/result');
-    } catch (e) {
+    } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsCalculating(false);
@@ -118,17 +119,17 @@ export default function QuickEstimatePage() {
       
       {/* Header and Progress */}
       <div className="flex items-center justify-between mb-10">
-        <Button variant="ghost" size="sm" asChild={step === 1} className="-ml-4 text-slate-500 hover:text-slate-900 focus-ring" onClick={step > 1 ? prevStep : undefined}>
-          {step === 1 ? (
+        {step === 1 ? (
+          <Button variant="ghost" size="sm" asChild className="-ml-4 text-slate-500 hover:text-slate-900 focus-ring">
             <Link href="/estimate">
               <ChevronLeft className="w-5 h-5 mr-1" /> Back
             </Link>
-          ) : (
-            <button type="button">
-              <ChevronLeft className="w-5 h-5 mr-1" /> Back
-            </button>
-          )}
-        </Button>
+          </Button>
+        ) : (
+          <Button type="button" variant="ghost" size="sm" className="-ml-4 text-slate-500 hover:text-slate-900 focus-ring" onClick={prevStep}>
+            <ChevronLeft className="w-5 h-5 mr-1" /> Back
+          </Button>
+        )}
         <div className="flex items-center gap-2 text-sm font-bold text-primary">
           Step {step} of 4
         </div>
@@ -182,7 +183,7 @@ export default function QuickEstimatePage() {
                   <FormItem className="space-y-4 pt-6 border-t border-slate-100">
                     <FormLabel className="text-lg font-bold text-slate-900">Number of stories</FormLabel>
                     <FormControl>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         {['1', '2', '3', '4+'].map((val) => (
                           <FormItem key={val}>
                             <FormControl>
@@ -221,7 +222,7 @@ export default function QuickEstimatePage() {
                   <FormItem className="space-y-6">
                     <FormLabel className="text-lg font-bold text-slate-900">Where would you like lights installed?</FormLabel>
                     <FormControl>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         
                         <FormItem>
                           <FormControl><RadioGroupItem value="front-only" className="peer sr-only" /></FormControl>
@@ -292,7 +293,7 @@ export default function QuickEstimatePage() {
                   <FormItem className="space-y-6">
                     <FormLabel className="text-lg font-bold text-slate-900">How complex is your roofline?</FormLabel>
                     <FormControl>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         
                         <FormItem>
                           <FormControl><RadioGroupItem value="simple" className="peer sr-only" /></FormControl>

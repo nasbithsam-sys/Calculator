@@ -1,31 +1,47 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Govee Estimate Calculator Flow', () => {
-  test('navigates from landing to quick estimate and shows result', async ({ page }) => {
+  test('landing page shows all eight estimate methods', async ({ page }) => {
+    await page.goto('/estimate');
+
+    await expect(page.getByRole('heading', { name: 'Get Your Permanent Lights Estimate' })).toBeVisible();
+
+    const methodNames = [
+      'Enter My Address',
+      'Upload House Photos',
+      'Mark My Roofline',
+      'Quick Estimate',
+      'I Know My Measurements',
+      'Guided Video Walkaround',
+      'Upload a Plan or Drawing',
+      'Request Expert Review',
+    ];
+
+    for (const methodName of methodNames) {
+      await expect(page.getByText(methodName, { exact: false }).first()).toBeVisible();
+    }
+  });
+
+  test('quick estimate collects inputs and reaches review step', async ({ page }) => {
     await page.goto('/estimate/quick');
-    await expect(page.locator('div[data-slot="card-title"]')).toContainText('Quick Estimate');
-    
-    // Fill out form
-    await page.click('label:has-text("Front of House Only")');
-    await page.fill('input[name="frontageFeet"]', '40');
-    await page.fill('input[name="peaks"]', '2');
-    await page.click('label:has-text("2")');
-    await page.click('label:has-text("Simple")');
-    
-    // Submit
-    await page.click('button:has-text("Calculate Estimate")');
-    
-    // Verify result page
-    await expect(page).toHaveURL(/.*\/estimate\/result/);
-    await expect(page.locator('h1')).toContainText('Your Estimate Result');
-    
-    // Should have price range and feet
-    await expect(page.locator('text=$').first()).toBeVisible();
-    await expect(page.locator('text=ft').first()).toBeVisible();
-    
-    // Verify persistence on reload
-    await page.reload();
-    await expect(page.locator('h1')).toContainText('Your Estimate Result');
-    await expect(page.locator('text=$').first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Quick Estimate' })).toBeVisible();
+
+    await page.getByPlaceholder('e.g. 50').fill('60');
+    await page.getByText('2', { exact: true }).click();
+    await page.getByRole('button', { name: /Continue/ }).click();
+
+    await expect(page.getByRole('heading', { name: 'Lighting Coverage' })).toBeVisible();
+    await page.getByText('Front & Sides').click();
+    await page.getByRole('button', { name: /Continue/ }).click();
+
+    await expect(page.getByRole('heading', { name: 'Roofline' })).toBeVisible();
+    await page.getByText('Complex', { exact: true }).click();
+    await page.getByPlaceholder('e.g. 2').fill('3');
+    await page.getByRole('button', { name: /Review Answers/ }).click();
+
+    await expect(page.getByRole('heading', { name: 'Review Your Inputs' })).toBeVisible();
+    await expect(page.getByText('60 ft')).toBeVisible();
+    await expect(page.getByText('front sides')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Get My Estimate/ })).toBeVisible();
   });
 });

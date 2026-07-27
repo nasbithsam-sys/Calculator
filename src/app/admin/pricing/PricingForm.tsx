@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type PricingFormState = { error?: string; success?: boolean } | null;
+
 export function PricingForm() {
-  const [state, action, isPending] = useActionState(async (prevState: any, formData: FormData) => {
+  const [state, action, isPending] = useActionState(async (_prevState: PricingFormState, formData: FormData): Promise<PricingFormState> => {
     const result = await createPricingConfiguration(formData);
     if (result?.error) {
       return { error: result.error };

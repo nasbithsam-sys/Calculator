@@ -1,10 +1,19 @@
-import { getProducts, createProduct, toggleProductStatus } from "@/app/actions/admin-products";
+import { getProducts, toggleProductStatus } from "@/app/actions/admin-products";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProductForm } from "./ProductForm";
 
+interface ProductCatalogRow {
+  id: string;
+  name: string;
+  model_number: string | null;
+  length_feet: number;
+  is_active: boolean;
+  verification_status: string | null;
+}
+
 export default async function ProductsConfigPage() {
-  const products = await getProducts();
+  const products = await getProducts() as ProductCatalogRow[];
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -29,7 +38,7 @@ export default async function ProductsConfigPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((p: any) => (
+                    {products.map((p) => (
                       <tr key={p.id} className="border-b border-slate-100">
                         <td className="px-4 py-3">
                           <div className="font-medium text-slate-900">{p.name}</div>

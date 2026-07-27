@@ -1,4 +1,3 @@
-import { createClient } from "@/utils/supabase/server"
 import { notFound } from "next/navigation"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -7,14 +6,25 @@ import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 import { revalidatePath } from "next/cache"
 import { Textarea } from "@/components/ui/textarea"
+import { requireAdmin } from "@/lib/admin"
+
+interface QuoteMeasurementRow {
+  id: string;
+  section_name: string;
+  length_feet: number | string;
+}
+
+interface UploadedFileRow {
+  id: string;
+  original_name: string | null;
+  storage_path: string;
+  image_annotations?: { id: string }[] | null;
+}
 
 export default async function AdminQuoteDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const quoteId = params.id
-  const supabase = await createClient()
-  
-  // Get current user to see if they can claim it
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase } = await requireAdmin()
 
   const { data: quote, error } = await supabase
     .from('quotes')
@@ -37,11 +47,12 @@ export default async function AdminQuoteDetailPage(props: { params: Promise<{ id
   }
 
   const review = quote.expert_reviews?.[0]
+  const measurements = (quote.quote_measurements || []) as QuoteMeasurementRow[]
+  const files = (quote.uploaded_files || []) as UploadedFileRow[]
 
   const claimReview = async (formData: FormData) => {
     "use server"
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user } = await requireAdmin()
     
     if (user && review) {
       const notes = formData.get('notes') as string
@@ -111,19 +122,19 @@ export default async function AdminQuoteDetailPage(props: { params: Promise<{ id
         </Card>
       </div>
 
-      {(quote.quote_measurements?.length > 0 || quote.quote_map_drawings?.length > 0 || quote.uploaded_files?.length > 0) && (
+      {(measurements.length > 0 || quote.quote_map_drawings?.length > 0 || files.length > 0) && (
         <Card>
           <CardHeader>
             <CardTitle>Estimation Data</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             
-            {quote.quote_measurements?.length > 0 && (
+            {measurements.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-2 text-slate-800">Measurements</h3>
                 <div className="bg-slate-50 p-4 rounded-md border border-slate-200">
                   <ul className="space-y-1">
-                    {quote.quote_measurements.map((m: any) => (
+                    {measurements.map((m) => (
                       <li key={m.id} className="text-sm flex justify-between border-b pb-1">
                         <span>{m.section_name}</span>
                         <span className="font-medium">{m.length_feet} ft</span>
@@ -131,7 +142,7 @@ export default async function AdminQuoteDetailPage(props: { params: Promise<{ id
                     ))}
                     <li className="text-sm flex justify-between font-bold pt-1">
                       <span>Total</span>
-                      <span>{quote.quote_measurements.reduce((sum: number, m: any) => sum + Number(m.length_feet), 0)} ft</span>
+                      <span>{measurements.reduce((sum, m) => sum + Number(m.length_feet), 0)} ft</span>
                     </li>
                   </ul>
                 </div>
@@ -147,19 +158,19 @@ export default async function AdminQuoteDetailPage(props: { params: Promise<{ id
               </div>
             )}
 
-            {quote.uploaded_files?.length > 0 && (
+            {files.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-2 text-slate-800">Uploaded Photos & Annotations</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {quote.uploaded_files.map((file: any) => (
+                  {files.map((file) => (
                     <div key={file.id} className="border p-2 rounded-md bg-white">
                       <div className="text-sm font-medium mb-1 truncate">{file.original_name}</div>
                       <div className="aspect-video bg-slate-100 rounded flex items-center justify-center text-xs text-slate-400">
                         Image via {file.storage_path}
                       </div>
-                      {file.image_annotations?.length > 0 && (
+                      {(file.image_annotations?.length || 0) > 0 && (
                         <div className="mt-2 text-xs text-blue-600 font-medium">
-                          Contains {file.image_annotations.length} annotation records
+                          Contains {file.image_annotations?.length || 0} annotation records
                         </div>
                       )}
                     </div>

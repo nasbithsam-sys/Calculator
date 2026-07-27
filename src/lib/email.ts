@@ -8,16 +8,22 @@ interface ExpertReviewEmailParams {
 
 export async function sendExpertReviewEmail({ to, referenceNumber, name }: ExpertReviewEmailParams) {
   if (!env.EMAIL_PROVIDER_KEY || !env.EMAIL_SENDER_ADDRESS) {
-    console.log("Mock Email Sent: Expert Review Request", { to, referenceNumber });
-    return { success: true, mocked: true };
+    return {
+      success: false,
+      pending: true,
+      error: "Email provider is not configured.",
+    };
   }
 
   // In production, integrate Resend, Sendgrid, etc.
   try {
-    // const resend = new Resend(env.EMAIL_PROVIDER_KEY);
-    // await resend.emails.send({ ... });
-    console.log("Real email would be sent here via provider.");
-    return { success: true };
+    // Provider SDK integration belongs here. Do not claim delivery unless the provider call succeeds.
+    console.info("Email provider configured; delivery adapter is not installed.", {
+      referenceNumber,
+      recipientDomain: to.split("@")[1],
+      hasName: Boolean(name),
+    });
+    return { success: false, pending: true, error: "Email delivery adapter is not installed." };
   } catch (error) {
     console.error("Failed to send email", error);
     return { success: false, error };

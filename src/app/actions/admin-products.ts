@@ -1,10 +1,10 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/admin";
 
 export async function getProducts() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data, error } = await supabase
     .from("products")
     .select("*")
@@ -18,7 +18,7 @@ export async function getProducts() {
 }
 
 export async function createProduct(formData: FormData) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
   const payload = {
     name: formData.get("name") as string,
@@ -50,7 +50,7 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function toggleProductStatus(id: string, currentStatus: boolean) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("products")
     .update({ is_active: !currentStatus })

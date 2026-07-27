@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { QuoteData, EstimationMethod, EstimateStatus, ConfidenceLevel, FileMetadata } from '@/types/quote';
+import { QuoteData, EstimationMethod, EstimateStatus, ConfidenceLevel, FileMetadata, PriceAdjustment, ProductRecommendation } from '@/types/quote';
 
 export const QUOTE_SCHEMA_VERSION = '1.0.0';
 export const PRICING_VERSION = '1.0.0';
@@ -15,17 +15,42 @@ export interface QuoteStore {
   setFeet: (feet: number | null, type: 'estimated' | 'customer') => void;
   setMeasurementSections: (sections: QuoteData['measurementSections']) => void;
   setPriceRange: (range: { min: number; max: number } | null) => void;
-  setCalculationResult: (result: { priceRange: { min: number; max: number }, recommendedKits: any[], adjustments: any[], pricingVersion: string, productCatalogVersion: string }) => void;
+  setCalculationResult: (result: {
+    estimatedLinearFeet: number;
+    supportedInstallationFeet?: number;
+    estimatedInstallationFeetMin?: number;
+    estimatedInstallationFeetMax?: number;
+    recommendedPurchasingFeet: number;
+    recommendedPurchasingFeetMin?: number;
+    recommendedPurchasingFeetMax?: number;
+    projectedUnsupportedFeet?: number;
+    expertConfirmedFeet?: number;
+    totalSuppliedKitFeet?: number;
+    excessKitFeet?: number;
+    priceRange: { min: number; max: number };
+    recommendedKits: ProductRecommendation[];
+    adjustments: PriceAdjustment[];
+    pricingVersion: string;
+    catalogVersion?: string;
+    productCatalogVersion?: string;
+    estimationModelVersion?: string;
+  }) => void;
   setStatus: (status: EstimateStatus, confidence: ConfidenceLevel) => void;
   addPhoto: (photo: FileMetadata) => void;
   updatePhoto: (id: string, updates: Partial<FileMetadata>) => void;
   removePhoto: (id: string) => void;
   addPlan: (plan: FileMetadata) => void;
   removePlan: (id: string) => void;
+  setVideos: (videos: FileMetadata[]) => void;
   resetQuote: () => void;
 }
 
-const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+let fallbackIdCounter = 0;
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  fallbackIdCounter += 1;
+  return `local-${Date.now()}-${fallbackIdCounter}`;
+};
 
 const initialQuoteState: QuoteData = {
   quoteId: generateId(),
@@ -42,11 +67,23 @@ const initialQuoteState: QuoteData = {
   areas: {},
   
   estimatedLinearFeet: null,
+  supportedInstallationFeet: null,
+  estimatedInstallationFeetMin: null,
+  estimatedInstallationFeetMax: null,
+  recommendedPurchasingFeet: null,
+  recommendedPurchasingFeetMin: null,
+  recommendedPurchasingFeetMax: null,
+  projectedUnsupportedFeet: null,
   customerProvidedFeet: null,
+  expertConfirmedFeet: null,
+  totalSuppliedKitFeet: null,
+  excessKitFeet: null,
+  estimationModelVersion: null,
   measurementSections: [],
   
   uploadedPhotos: [],
   uploadedPlans: [],
+  uploadedVideos: [],
   
   priceRange: null,
   recommendedKits: [],
@@ -118,11 +155,23 @@ export const useQuoteStore = create<QuoteStore>()(
       setCalculationResult: (result) => set((state) => ({
         quote: {
           ...state.quote,
+          estimatedLinearFeet: result.estimatedLinearFeet,
+          supportedInstallationFeet: result.supportedInstallationFeet ?? result.estimatedLinearFeet,
+          estimatedInstallationFeetMin: result.estimatedInstallationFeetMin ?? result.estimatedLinearFeet,
+          estimatedInstallationFeetMax: result.estimatedInstallationFeetMax ?? result.estimatedLinearFeet,
+          recommendedPurchasingFeet: result.recommendedPurchasingFeet,
+          recommendedPurchasingFeetMin: result.recommendedPurchasingFeetMin ?? result.recommendedPurchasingFeet,
+          recommendedPurchasingFeetMax: result.recommendedPurchasingFeetMax ?? result.recommendedPurchasingFeet,
+          projectedUnsupportedFeet: result.projectedUnsupportedFeet ?? 0,
+          expertConfirmedFeet: result.expertConfirmedFeet ?? null,
+          totalSuppliedKitFeet: result.totalSuppliedKitFeet ?? result.recommendedKits.reduce((sum, kit) => sum + kit.lengthFeet * kit.quantity, 0),
+          excessKitFeet: result.excessKitFeet ?? Math.max(0, result.recommendedKits.reduce((sum, kit) => sum + kit.lengthFeet * kit.quantity, 0) - result.recommendedPurchasingFeet),
           priceRange: result.priceRange,
           recommendedKits: result.recommendedKits,
           adjustments: result.adjustments,
           pricingVersion: result.pricingVersion,
-          productCatalogVersion: result.productCatalogVersion,
+          productCatalogVersion: result.productCatalogVersion ?? result.catalogVersion ?? state.quote.productCatalogVersion,
+          estimationModelVersion: result.estimationModelVersion ?? state.quote.estimationModelVersion,
           updatedAt: Date.now()
         }
       })),
@@ -172,6 +221,14 @@ export const useQuoteStore = create<QuoteStore>()(
         quote: {
           ...state.quote,
           uploadedPlans: state.quote.uploadedPlans.filter(p => p.id !== id),
+          updatedAt: Date.now()
+        }
+      })),
+      
+      setVideos: (videos) => set((state) => ({
+        quote: {
+          ...state.quote,
+          uploadedVideos: videos,
           updatedAt: Date.now()
         }
       })),

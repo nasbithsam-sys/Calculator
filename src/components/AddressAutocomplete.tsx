@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { env } from '@/lib/env';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigation, Loader2, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 
 interface PlaceResult {
   address: string;
@@ -29,40 +28,9 @@ export function AddressAutocomplete({ onPlaceSelected, defaultValue = '' }: Addr
   const [error, setError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+  const { isLoaded, error: scriptError } = useGoogleMaps();
 
-  useEffect(() => {
-    if (!window.google && !document.getElementById('google-maps-script')) {
-      const script = document.createElement('script');
-      script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY}&libraries=places&v=weekly`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      
-      script.onload = initAutocomplete;
-    } else if (window.google) {
-      initAutocomplete();
-    }
-
-    function initAutocomplete() {
-      if (!inputRef.current || !window.google) return;
-      
-      geocoderRef.current = new window.google.maps.Geocoder();
-
-      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        componentRestrictions: { country: 'us' },
-        fields: ['formatted_address', 'address_components', 'geometry', 'place_id'],
-        types: ['address'],
-      });
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        handlePlaceResult(place);
-      });
-    }
-  }, []);
-
-  const handlePlaceResult = (place: google.maps.places.PlaceResult) => {
+  const handlePlaceResult = useCallback((place: google.maps.places.PlaceResult) => {
     if (!place.geometry || !place.geometry.location || !place.address_components) {
       setError("Please select a valid address from the dropdown.");
       return;
@@ -83,7 +51,7 @@ export function AddressAutocomplete({ onPlaceSelected, defaultValue = '' }: Addr
       placeId: place.place_id || '',
     };
     
-    place.address_components.forEach((component: any) => {
+    place.address_components.forEach((component: google.maps.GeocoderAddressComponent) => {
       const types = component.types;
       if (types.includes('street_number')) addressData.streetNumber = component.long_name;
       if (types.includes('route')) addressData.streetName = component.long_name;
@@ -99,7 +67,25 @@ export function AddressAutocomplete({ onPlaceSelected, defaultValue = '' }: Addr
     }
 
     onPlaceSelected(addressData);
-  };
+  }, [onPlaceSelected]);
+
+  useEffect(() => {
+    if (!isLoaded || geocoderRef.current) return;
+    if (!inputRef.current || !window.google) return;
+      
+    geocoderRef.current = new window.google.maps.Geocoder();
+
+    const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+      componentRestrictions: { country: 'us' },
+      fields: ['formatted_address', 'address_components', 'geometry', 'place_id'],
+      types: ['address'],
+    });
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      handlePlaceResult(place);
+    });
+  }, [handlePlaceResult, isLoaded]);
 
   const locateMe = () => {
     if (!navigator.geolocation) {
@@ -141,7 +127,7 @@ export function AddressAutocomplete({ onPlaceSelected, defaultValue = '' }: Addr
           }
         });
       },
-      (err) => {
+      () => {
         setIsLocating(false);
         setError("Location access denied or unavailable.");
       },
@@ -180,6 +166,11 @@ export function AddressAutocomplete({ onPlaceSelected, defaultValue = '' }: Addr
       {error && (
         <div className="text-sm font-bold text-destructive bg-red-50 p-3 rounded-lg border border-red-100 animate-in fade-in">
           {error}
+        </div>
+      )}
+      {scriptError && (
+        <div className="text-sm font-bold text-destructive bg-red-50 p-3 rounded-lg border border-red-100 animate-in fade-in">
+          {scriptError.message}
         </div>
       )}
     </div>

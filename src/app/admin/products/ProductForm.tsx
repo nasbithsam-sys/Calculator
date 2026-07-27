@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+type ProductFormState = { error?: string; success?: boolean } | null;
+
 export function ProductForm() {
-  const [state, action, isPending] = useActionState(async (prevState: any, formData: FormData) => {
+  const [state, action, isPending] = useActionState(async (_prevState: ProductFormState, formData: FormData): Promise<ProductFormState> => {
     const result = await createProduct(formData);
     if (result?.error) {
       return { error: result.error };

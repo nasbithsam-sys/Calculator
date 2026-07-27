@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useQuoteStore } from '@/store/quoteStore';
-import { ChevronLeft, Loader2, TriangleAlert, Map as MapIcon, ArrowRight, UserCheck } from 'lucide-react';
+import { ChevronLeft, Loader2, TriangleAlert, ArrowRight, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import { MapEditor, MapSection } from '@/components/MapEditor';
 import { calculateEstimate } from '@/app/actions/calculate';
+
+import { Input } from '@/components/ui/input';
 
 export default function MapPage() {
   const router = useRouter();
@@ -16,8 +18,10 @@ export default function MapPage() {
   const [sections, setSections] = useState<MapSection[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [peakRises, setPeakRises] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
     setMethod('map');
   }, [setMethod]);
@@ -25,21 +29,33 @@ export default function MapPage() {
   const onCalculate = async () => {
     if (sections.length === 0) return;
 
-    // Check for sloped peaks that might need manual adjustment / expert review
-    const hasSlopedPeaks = sections.some(s => s.type === 'sloped_peak');
-    
     setIsCalculating(true);
     setError(null);
     try {
-      const totalFeet = sections.reduce((sum, s) => sum + s.lengthFeet, 0);
-      const measuredSections = sections.map((s, i) => ({
-        id: s.id,
-        name: s.name,
-        lengthFeet: s.lengthFeet,
-        order: i,
-        coordinates: s.path,
-        type: s.type
-      }));
+      const measuredSections = sections.map((s, i) => {
+        let lengthFeet = s.lengthFeet;
+        let measurementStatus: "supported" | "unsupported" = s.type === "horizontal_eave" || s.type === "horizontal_perimeter" ? "supported" : "unsupported";
+        if (s.type === 'sloped_peak') {
+          const rise = peakRises[s.id] || 0;
+          if (rise > 0) {
+            lengthFeet = 2 * Math.sqrt(Math.pow(s.lengthFeet / 2, 2) + Math.pow(rise, 2));
+            measurementStatus = "supported";
+          }
+        }
+        return {
+          id: s.id,
+          name: s.name,
+          lengthFeet: lengthFeet,
+          order: i,
+          coordinates: s.path,
+          type: s.type,
+          measurementStatus,
+        };
+      });
+
+      const totalFeet = measuredSections
+        .filter((section) => section.measurementStatus === "supported")
+        .reduce((sum, section) => sum + section.lengthFeet, 0);
 
       const result = await calculateEstimate({
         coverage: "measured",
@@ -57,16 +73,16 @@ export default function MapPage() {
       setMeasurementSections(measuredSections);
       setFeet(totalFeet, 'customer');
       setFeet(result.estimatedLinearFeet, 'estimated');
-      setCalculationResult(result as any);
+      setCalculationResult(result);
       
-      if (hasSlopedPeaks) {
+      if (sections.some((section) => section.type !== "horizontal_eave" && section.type !== "horizontal_perimeter" && !peakRises[section.id])) {
         setStatus('preliminary', 'medium');
       } else {
         setStatus('ready-for-review', 'high'); 
       }
 
       router.push('/estimate/result');
-    } catch (e) {
+    } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsCalculating(false);
@@ -89,8 +105,8 @@ export default function MapPage() {
 
   if (!isClient) return null;
 
-  const hasSlopedPeaks = sections.some(s => s.type === 'sloped_peak');
-
+  const slopedPeaks = sections.filter(s => s.type === 'sloped_peak');
+  const hasSlopedPeaks = slopedPeaks.length > 0;
   return (
     <div className="max-w-[1400px] mx-auto animate-in fade-in duration-300 pb-8 px-4 sm:px-6 lg:px-8">
       {/* Header */}
@@ -128,9 +144,9 @@ export default function MapPage() {
         <div className="mb-6 bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-4 shadow-sm animate-in slide-in-from-top-2">
           <TriangleAlert className="w-6 h-6 shrink-0 text-amber-600 mt-0.5" />
           <div>
-            <p className="font-bold text-amber-900 text-lg mb-1">Sloped Peaks Detected</p>
+            <p className="font-bold text-amber-900 text-lg mb-1">Sloped Peaks Are Not Included in Authoritative Pricing</p>
             <p className="text-amber-800 font-medium leading-relaxed">
-              Satellite imagery only measures flat, horizontal distances. Sloped peaks require geometric adjustment to calculate the true physical length. We recommend requesting an Expert Review to finalize this estimate accurately.
+              Satellite imagery only measures horizontal width. Sloped peaks require geometric adjustment using the peak rise (height) to calculate the hypotenuse. We recommend requesting an Expert Review to finalize this estimate accurately.
             </p>
           </div>
         </div>
@@ -151,6 +167,48 @@ export default function MapPage() {
           onSectionsChange={setSections}
         />
       </div>
+      
+      {hasSlopedPeaks && (
+        <div className="mt-8 bg-white p-6 sm:p-8 rounded-3xl card-shadow border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Calculate Sloped Peaks</h2>
+          <p className="text-slate-600 mb-6 font-medium">Enter the rise (height) for each peak to calculate the true length of the sloped roofline using the width drawn on the map.</p>
+          <div className="space-y-4">
+            {slopedPeaks.map(s => {
+              const rise = peakRises[s.id] || 0;
+              const width = s.lengthFeet;
+              const trueLength = rise > 0 ? 2 * Math.sqrt(Math.pow(width / 2, 2) + Math.pow(rise, 2)) : width;
+              return (
+                <div key={s.id} className="flex flex-col sm:flex-row sm:items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div className="flex-1 font-bold text-slate-900 text-lg">{s.name}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Width</span>
+                      <span className="text-slate-700 font-medium">{width.toFixed(1)} ft</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Rise</span>
+                      <div className="relative">
+                        <Input 
+                          type="number" 
+                          min={0}
+                          placeholder="0"
+                          value={peakRises[s.id] || ''}
+                          onChange={(e) => setPeakRises(prev => ({ ...prev, [s.id]: Number(e.target.value) }))}
+                          className="w-24 text-center font-bold"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center ml-2 pl-4 border-l border-slate-200">
+                      <span className="text-xs font-bold text-primary uppercase tracking-wider mb-1">True Length</span>
+                      <span className="font-extrabold text-primary text-xl">{trueLength.toFixed(1)} ft</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Mobile Actions */}
       <div className="md:hidden mt-8 flex flex-col gap-3">

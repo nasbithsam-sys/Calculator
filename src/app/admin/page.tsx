@@ -1,11 +1,25 @@
 import { CheckCircle2, AlertCircle, Clock } from "lucide-react"
 import { checkApplicationReadiness } from "@/lib/readiness"
-import { createClient } from "@/utils/supabase/server"
+import { requireAdmin } from "@/lib/admin"
 import Link from "next/link"
+
+interface RecentReviewRow {
+  id: string;
+  status: string;
+  created_at: string;
+  quotes?: {
+    id?: string;
+    reference_number?: string;
+    customers?: {
+      name?: string;
+      email?: string;
+    } | null;
+  } | null;
+}
 
 export default async function AdminDashboard() {
   const readiness = await checkApplicationReadiness();
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
   // Fetch recent reviews
   const { data: recentReviews } = await supabase
@@ -80,7 +94,7 @@ export default async function AdminDashboard() {
           <h2 className="text-lg font-bold text-slate-900 mb-4">Recent Activity</h2>
           {recentReviews && recentReviews.length > 0 ? (
             <div className="space-y-3">
-              {recentReviews.map((review: any) => (
+              {(recentReviews as RecentReviewRow[]).map((review) => (
                 <Link key={review.id} href={`/admin/quotes/${review.quotes?.id || review.id}`} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
                   <div>
                     <div className="font-medium text-sm text-slate-900">{review.quotes?.customers?.name || 'Unknown'}</div>

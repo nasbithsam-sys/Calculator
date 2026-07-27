@@ -1,10 +1,10 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/admin";
 
 export async function getPricingConfigurations() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data, error } = await supabase
     .from("pricing_configurations")
     .select("*")
@@ -18,7 +18,7 @@ export async function getPricingConfigurations() {
 }
 
 export async function createPricingConfiguration(formData: FormData) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
   const version = formData.get("version") as string;
   if (!version) return { error: "Version is required" };
@@ -54,7 +54,7 @@ export async function createPricingConfiguration(formData: FormData) {
 }
 
 export async function activatePricingConfiguration(id: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
   // Start transaction essentially by deactivating all, then activating one
   await supabase.from("pricing_configurations").update({ active: false }).neq('id', '00000000-0000-0000-0000-000000000000'); // Deactivate all
